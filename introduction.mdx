@@ -1,0 +1,151 @@
+---
+title: Welcome to Iftarkar
+description: A modern, beautiful Ramadan timings application designed for Kashmir with accurate Sehri and Iftar schedules
+---
+
+<img
+  className="block dark:hidden"
+  src="https://res.cloudinary.com/dhwrnmpds/image/upload/v1771484035/homescreeb_b6t82l.jpg"
+  alt="Iftarkar Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="https://res.cloudinary.com/dhwrnmpds/image/upload/v1771484035/homescreeb_b6t82l.jpg"
+  alt="Iftarkar Hero Dark"
+/>
+
+## What is Iftarkar?
+
+Iftarkar is a modern, beautiful, and easy-to-use Ramadan timings application designed specifically for the Kashmir region. Built with Next.js, TypeScript, and Tailwind CSS, it provides accurate Sehri and Iftar timings while prioritizing performance, aesthetics, and usability.
+
+The application ensures reliability during the holy month by using hardcoded timings stored in `data/timings.json`, guaranteeing users always have access to correct schedules even if external APIs fail.
+
+<CardGroup cols={2}>
+  <Card
+    title="Real-time countdown timer"
+    icon="clock"
+    href="/features/prayer-times"
+  >
+    Live countdown to next Sehri or Iftar with beautiful progress visualization
+  </Card>
+  <Card
+    title="Location-based timings"
+    icon="location-dot"
+    href="/configuration/locations"
+  >
+    Accurate schedules for all major districts in Kashmir with custom offsets
+  </Card>
+  <Card
+    title="Multiple Fiqh calendars"
+    icon="calendar-days"
+    href="/features/fiqh-schools"
+  >
+    Support for Hanafi, Jaffaria, and Ahle Hadees schools of thought
+  </Card>
+  <Card
+    title="iCal export"
+    icon="download"
+    href="/features/calendar-export"
+  >
+    Export to Google Calendar and Apple Calendar with .ics files
+  </Card>
+  <Card
+    title="Print-friendly calendars"
+    icon="print"
+    href="/features/print-calendars"
+  >
+    Generate beautiful, high-quality printable monthly schedules
+  </Card>
+  <Card
+    title="Progressive Web App"
+    icon="mobile"
+    href="/pwa-setup"
+  >
+    Install as a native-like app on Android and iOS with offline support
+  </Card>
+</CardGroup>
+
+## Key features
+
+### Accurate location-based timings
+
+Iftarkar provides precise Sehri and Iftar timings for all major districts in Kashmir:
+- Srinagar (base location)
+- Budgam, Baramulla, Anantnag, and more
+- Custom time offsets for each district
+
+### Multiple schools of thought
+
+Choose from three authentic Ramadan calendars:
+
+<CardGroup cols={3}>
+  <Card title="Hanafi" icon="moon">
+    Dar-ul-uloom Raheemiya
+  </Card>
+  <Card title="Jaffaria" icon="moon">
+    Educational Trust Kashmir (ETK)
+  </Card>
+  <Card title="Ahle Hadees" icon="moon">
+    Jamiat Ahle Hadees J&K
+  </Card>
+</CardGroup>
+
+<Note>
+  ETK calendar includes a 10-minute imsak buffer before Fajr, while Ahle Hadees includes a 5-minute buffer.
+</Note>
+
+### Export and print options
+
+Share your Ramadan schedule across devices:
+- **iCal export**: Download `.ics` calendar files compatible with Google Calendar, Apple Calendar, Outlook, and other calendar applications
+- **PDF download**: Access high-quality PDF versions of monthly schedules
+- **Print-friendly view**: Generate beautiful printable calendars directly from your browser
+
+### Progressive Web App features
+
+<Info>
+  Iftarkar works as a full-featured Progressive Web App (PWA) - install it on your device for a native app experience!
+</Info>
+
+Key PWA capabilities:
+- Installable on Android and iOS devices
+- Works offline once loaded
+- Fast, app-like performance
+- Add to home screen for quick access
+
+## Tech stack
+
+Iftarkar is built with modern web technologies:
+
+- **Framework**: [Next.js](https://nextjs.org/) (React framework)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Date handling**: [Luxon](https://moment.github.io/luxon/)
+- **Icons**: [FontAwesome](https://fontawesome.com/)
+- **PWA support**: [@ducanh2912/next-pwa](https://www.npmjs.com/package/@ducanh2912/next-pwa)
+
+## Getting started
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation"
+    icon="code"
+    href="/installation"
+  >
+    Clone the repository and set up your development environment
+  </Card>
+  <Card
+    title="PWA setup"
+    icon="mobile-screen"
+    href="/pwa-setup"
+  >
+    Install Iftarkar as a Progressive Web App on your device
+  </Card>
+</CardGroup>
+
+## Credits
+
+- **Original idea & development**: [Haider Ali Punjabi](https://haider.id)
+- **Maintainer**: Syed Fahad
+
+This project is open-source and available under the MIT License.

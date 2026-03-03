@@ -1,0 +1,311 @@
+---
+title: Offline support
+description: Progressive Web App with service worker caching for reliable access without internet
+---
+
+Iftarkar is built as a Progressive Web App (PWA), enabling you to access Ramadan timings even without an internet connection.
+
+## PWA configuration
+
+The application uses Next.js PWA integration for service worker management:
+
+```javascript
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
+});
+
+export default withPWA(nextConfig);
+```
+
+<Info>
+  The PWA is disabled during development to prevent caching issues during debugging. Service workers only activate in production builds.
+</Info>
+
+## Key PWA features
+
+<Tabs>
+  <Tab title="Service worker registration">
+    ```javascript
+    register: true
+    ```
+    
+    Automatically registers a service worker when users visit the site. This worker:
+    - Intercepts network requests
+    - Caches essential resources
+    - Serves cached content when offline
+    - Updates cache in the background
+  </Tab>
+
+  <Tab title="Skip waiting">
+    ```javascript
+    skipWaiting: true
+    ```
+    
+    New service workers activate immediately without waiting for all tabs to close. This ensures:
+    - Faster updates to the latest version
+    - Immediate availability of new features
+    - Reduced user confusion about outdated content
+  </Tab>
+
+  <Tab title="Cache destination">
+    ```javascript
+    dest: "public"
+    ```
+    
+    Generated service worker files are stored in the `public/` directory, making them accessible at the root URL path.
+  </Tab>
+</Tabs>
+
+## What gets cached
+
+The service worker caches critical resources for offline access:
+
+### Static assets
+- HTML pages
+- JavaScript bundles
+- CSS stylesheets
+- Font files (Plus Jakarta Sans, Roboto Mono, Amiri)
+- Icons and images
+
+### Application data
+- Complete timings.json (all 30 days for all methods)
+- Pre-generated iCalendar files
+- Prayer time calculations
+
+### Runtime caching
+- API responses
+- Dynamic routes
+- User settings (stored in localStorage)
+
+<Note>
+  The static export configuration (`output: "export"`) ensures all pages are pre-rendered as HTML, making them instantly cacheable.
+</Note>
+
+## Install as app
+
+Users can install Iftarkar as a standalone application:
+
+<Steps>
+  <Step title="Browser prompts for installation">
+    Modern browsers detect the PWA manifest and offer an "Add to Home Screen" or "Install" prompt.
+  </Step>
+
+  <Step title="Click install">
+    Accept the installation prompt to add Iftarkar to your device's home screen or app drawer.
+  </Step>
+
+  <Step title="Launch as standalone app">
+    The app opens in its own window without browser UI, providing a native app experience.
+  </Step>
+
+  <Step title="Access offline anytime">
+    Once installed, the app works completely offline, even without any internet connection.
+  </Step>
+</Steps>
+
+## Apple iOS support
+
+Special configuration for optimal iOS experience:
+
+```typescript
+export const metadata: Metadata = {
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Iftarkar",
+  },
+};
+```
+
+<Tabs>
+  <Tab title="Web app capable">
+    ```typescript
+    capable: true
+    ```
+    
+    Enables full-screen standalone mode on iOS devices when added to home screen.
+  </Tab>
+
+  <Tab title="Status bar style">
+    ```typescript
+    statusBarStyle: "default"
+    ```
+    
+    Configures the iOS status bar appearance:
+    - `default`: Black text on light background
+    - Maintains consistency with the app's design
+  </Tab>
+
+  <Tab title="App title">
+    ```typescript
+    title: "Iftarkar"
+    ```
+    
+    Sets the name displayed under the icon on iOS home screen.
+  </Tab>
+</Tabs>
+
+## Viewport optimization
+
+```typescript
+export const viewport: Viewport = {
+  themeColor: "#f0ebe3",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+```
+
+### Theme color
+
+The `#f0ebe3` theme color:
+- Matches the app's warm beige background
+- Appears in the browser's UI chrome
+- Shows in the task switcher on mobile devices
+
+### Scaling configuration
+
+```typescript
+width: "device-width",
+initialScale: 1,
+maximumScale: 1,
+```
+
+<Info>
+  Fixed scaling (`maximumScale: 1`) prevents accidental pinch-zoom, maintaining the intended layout on all devices.
+</Info>
+
+## Offline-first architecture
+
+The application is designed for reliability without connectivity:
+
+### Static export
+
+```javascript
+const nextConfig = {
+  output: "export",
+};
+```
+
+Pre-renders all pages at build time:
+- No server required
+- Instant page loads
+- Complete offline functionality
+- Can be deployed to static hosting
+
+### LocalStorage for settings
+
+User preferences persist locally:
+
+```typescript
+localStorage.setItem(Settings.prefix + "timing", value);
+localStorage.setItem(Settings.prefix + "offset", value.toString());
+```
+
+No server database needed:
+- Settings survive browser restarts
+- Work completely offline
+- No sync delays
+- Privacy-friendly (data stays on device)
+
+### Self-contained timing data
+
+All prayer times are embedded in the build:
+
+```typescript
+import timings from "@/data/timings.json";
+```
+
+No API calls required:
+- Instant calculations
+- No network dependencies
+- Guaranteed availability
+- Fast performance
+
+<Tip>
+  Because all data is pre-loaded, the app remains fully functional even in airplane mode or areas with no cellular coverage.
+</Tip>
+
+## Update strategy
+
+When new versions are deployed:
+
+1. **Background update**: Service worker downloads new files silently
+2. **Skip waiting**: New version activates immediately (`skipWaiting: true`)
+3. **Cache refresh**: Updated resources replace old cached versions
+4. **Seamless transition**: Users see new content on next page load
+
+<Note>
+  If you need to force an update immediately, clear your browser cache or unregister the service worker via developer tools.
+</Note>
+
+## Browser compatibility
+
+PWA features work in:
+
+- Chrome/Edge (Android, Windows, macOS, Linux)
+- Safari (iOS, macOS)
+- Firefox (Android, Windows, macOS, Linux)
+- Samsung Internet (Android)
+- Opera (Android, Windows, macOS)
+
+### Graceful degradation
+
+In browsers without service worker support:
+- App still functions normally
+- Online access required
+- No install prompt
+- Standard web browsing experience
+
+## Development vs production
+
+Service workers are environment-aware:
+
+```javascript
+disable: process.env.NODE_ENV === "development"
+```
+
+**Development mode**:
+- Service worker disabled
+- Always fetches latest code
+- No caching interference
+- Faster development iteration
+
+**Production mode**:
+- Service worker active
+- Aggressive caching
+- Offline support enabled
+- Optimized for performance
+
+## Verifying offline functionality
+
+<Steps>
+  <Step title="Visit the site while online">
+    Load iftarkar.com in your browser to cache all resources.
+  </Step>
+
+  <Step title="Open browser DevTools">
+    Press F12 or right-click → Inspect to open developer tools.
+  </Step>
+
+  <Step title="Enable offline mode">
+    Navigate to Network tab → Check "Offline" checkbox.
+  </Step>
+
+  <Step title="Reload the page">
+    Press Ctrl+R or Cmd+R. The site should load from cache without any network access.
+  </Step>
+
+  <Step title="Test features">
+    Verify that timer, calendars, and settings all work without internet.
+  </Step>
+</Steps>
+
+<Tip>
+  The service worker console logs can be viewed in DevTools → Application → Service Workers to debug caching behavior.
+</Tip>

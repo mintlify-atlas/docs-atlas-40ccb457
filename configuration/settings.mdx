@@ -1,0 +1,212 @@
+---
+title: Settings system
+description: Overview of the Settings class and user preferences in Iftarkar
+---
+
+The Settings class manages all user preferences for the Iftarkar application, including prayer time calculation methods, location offsets, and Hijri date adjustments. All settings are persisted to localStorage with the prefix `settingsV2-`.
+
+## Settings class API
+
+The Settings class is located at `lib/settings.ts:5` and provides static getters and setters for managing user preferences.
+
+### Core properties
+
+<ParamField path="method" type="string">
+  The prayer time calculation method/school. Returns the first available method (Raheemiya) if not set.
+  
+  **Storage key:** `settingsV2-timing`
+  
+  ```typescript
+  // Get current method
+  const currentMethod = Settings.method;
+  // Returns: "raheemiya" | "etk" | "ahle_hadees"
+  
+  // Set method
+  Settings.method = "etk";
+  ```
+</ParamField>
+
+<ParamField path="methodLabel" type="string" readonly>
+  Human-readable name for the current method.
+  
+  ```typescript
+  Settings.methodLabel;
+  // Returns: "Fiqah Hanafiya (Raheemiya Calendar)"
+  ```
+</ParamField>
+
+<ParamField path="offset" type="number">
+  Location-based time offset in minutes. Defaults to 0 (Srinagar).
+  
+  **Storage key:** `settingsV2-offset`
+  
+  ```typescript
+  // Get current offset
+  const offset = Settings.offset; // Returns: 0
+  
+  // Set offset for Baramulla (+1 minute)
+  Settings.offset = 1;
+  ```
+</ParamField>
+
+<ParamField path="offsetLabel" type="string" readonly>
+  Human-readable location name for the current offset.
+  
+  ```typescript
+  Settings.offsetLabel;
+  // Returns: "Srinagar" (when offset is 0)
+  // Returns: "Baramulla, Tangmarg, Sopore" (when offset is 1)
+  ```
+</ParamField>
+
+<ParamField path="hijriOffset" type="number">
+  Adjustment for Hijri calendar date in days. Allows users to correct Islamic date based on moon sighting.
+  
+  **Storage key:** `settingsV2-hijriOffset`
+  
+  ```typescript
+  // Adjust Hijri date by +1 day
+  Settings.hijriOffset = 1;
+  ```
+</ParamField>
+
+### Computed properties
+
+<ParamField path="sehriOffet" type="number" readonly>
+  Automatic Sehri time adjustment based on the selected method. This offset is applied to Fajr time to calculate Sehri.
+  
+  - **Raheemiya (Hanafi):** 0 minutes
+  - **ETK (Jaffaria):** -10 minutes
+  - **AJKSA (Ahle Hadees):** -5 minutes
+  
+  ```typescript
+  Settings.method = "etk";
+  Settings.sehriOffet; // Returns: -10
+  ```
+</ParamField>
+
+<ParamField path="methods" type="object" readonly>
+  Returns all available calculation methods with their display names.
+  
+  ```typescript
+  Settings.methods;
+  // Returns:
+  // {
+  //   "raheemiya": "Fiqah Hanafiya (Raheemiya Calendar)",
+  //   "etk": "Fiqah Jaffaria (ETK Calendar)",
+  //   "ahle_hadees": "Jamiat Ahle Hadees J&K"
+  // }
+  ```
+</ParamField>
+
+<ParamField path="offsets" type="object" readonly>
+  Returns all available location offsets for the current method.
+  
+  ```typescript
+  Settings.offsets;
+  // Returns:
+  // {
+  //   0: "Srinagar",
+  //   -1: "Pulwama, Kulgam, Harmukh",
+  //   1: "Baramulla, Tangmarg, Sopore",
+  //   ...
+  // }
+  ```
+</ParamField>
+
+<ParamField path="timings" type="object" readonly>
+  Returns the timing data for the current method. Contains date-keyed Fajr and Maghrib times.
+  
+  ```typescript
+  Settings.timings;
+  // Returns:
+  // {
+  //   "1902": { "fajr": "05:49", "maghrib": "18:21" },
+  //   "2002": { "fajr": "05:48", "maghrib": "18:22" },
+  //   ...
+  // }
+  ```
+</ParamField>
+
+## Settings UI
+
+The settings modal is implemented in `components/settings.tsx:12` and provides a user interface for changing preferences.
+
+<Steps>
+  <Step title="Select calculation method">
+    Choose between Raheemiya (Hanafi), ETK (Jaffaria), or Ahle Hadees schools. The page reloads automatically when changed.
+    
+    ```tsx
+    <select
+      onChange={(e) => {
+        Settings.method = e.target.value;
+        window.location.reload();
+      }}
+      defaultValue={Settings.method}
+    >
+      {Object.entries(Settings.methods).map(([key, name]) => (
+        <option key={key} value={key}>
+          {name}
+        </option>
+      ))}
+    </select>
+    ```
+  </Step>
+  
+  <Step title="Select location offset">
+    Choose your district to apply the appropriate time offset. The page reloads automatically when changed.
+    
+    ```tsx
+    <select
+      onChange={(e) => {
+        Settings.offset = parseInt(e.target.value);
+        window.location.reload();
+      }}
+      defaultValue={Settings.offset}
+    >
+      {Object.entries(Settings.offsets).map(([key, name]) => (
+        <option key={key} value={key}>
+          {name}
+        </option>
+      ))}
+    </select>
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  All settings changes trigger a page reload to ensure the updated prayer times are calculated and displayed correctly.
+</Note>
+
+## Storage format
+
+Settings are stored in localStorage with the `settingsV2-` prefix:
+
+```json
+{
+  "settingsV2-timing": "raheemiya",
+  "settingsV2-offset": "0",
+  "settingsV2-hijriOffset": "0"
+}
+```
+
+<Info>
+  The `settingsV2-` prefix indicates this is version 2 of the settings system, allowing for migration from older versions.
+</Info>
+
+## Server-side rendering
+
+The Settings class handles server-side rendering gracefully:
+
+- **`method`** returns the first available method (Raheemiya) when `window` is undefined
+- **`offset`** and **`hijriOffset`** return 0 when `window` is undefined
+
+```typescript
+static get method(): string {
+  if (typeof window == "undefined") return Object.keys(timings)[0];
+  return (
+    localStorage.getItem(Settings.prefix + "timing") ??
+    Object.keys(timings)[0]
+  );
+}
+```

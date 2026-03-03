@@ -1,0 +1,337 @@
+---
+title: Data structure
+description: Understanding prayer timings data format and location offsets
+---
+
+## Overview
+
+Iftarkar uses a hardcoded JSON file containing all Ramadan prayer timings. This ensures reliability even if external APIs fail during the holy month.
+
+<Note>
+**Data location:** `data/timings.json` (~479 lines)
+
+Contains Sehri and Iftar times for the entire month across three Islamic schools of thought (fiqh).
+</Note>
+
+## Root structure
+
+The timings file contains three main methods:
+
+```json
+{
+  "raheemiya": { /* Hanafi timings */ },
+  "etk": { /* Jaffaria timings */ },
+  "ahle_hadees": { /* Ahle Hadees timings */ }
+}
+```
+
+### TypeScript types
+
+<CodeGroup>
+```ts types.d.ts
+import timings from "@/data/timings.json";
+
+export type TimingKeys = keyof typeof timings;
+// "raheemiya" | "etk" | "ahle_hadees"
+
+export type OffsetType = (typeof timings.raheemiya.offsets)[0];
+// { name: string; offset: number }
+```
+</CodeGroup>
+
+## Method object structure
+
+Each method contains:
+
+<Tabs>
+  <Tab title="Schema">
+    ```typescript
+    type Method = {
+      name: string;              // Display name
+      offsets: Offset[];         // Location adjustments
+      timings: DailyTimings;     // Date-keyed prayer times
+    }
+
+    type Offset = {
+      name: string;              // Location name
+      offset: number;            // Minutes to add/subtract
+    }
+
+    type DailyTimings = {
+      [date: string]: {          // Format: "DDMM" (e.g., "1902")
+        fajr: string;            // Format: "HH:mm" (e.g., "05:49")
+        maghrib: string;         // Format: "HH:mm" (e.g., "18:21")
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Example">
+    ```json data/timings.json
+    {
+      "raheemiya": {
+        "name": "Raheemiya Calendar",
+        "offsets": [
+          {
+            "name": "Pulwama, Kulgam, Harmukh",
+            "offset": -1
+          },
+          {
+            "name": "Baramulla, Tangmarg, Sopore",
+            "offset": 1
+          },
+          {
+            "name": "Leh",
+            "offset": -11
+          }
+        ],
+        "timings": {
+          "1902": {
+            "fajr": "05:49",
+            "maghrib": "18:21"
+          },
+          "2002": {
+            "fajr": "05:48",
+            "maghrib": "18:22"
+          }
+          // ... 30 days total
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Date format
+
+Dates are stored in `DDMM` format (day + month):
+
+| Date | Format | Example |
+|------|--------|--------|
+| Feb 19 | `"1902"` | 19th day, 02nd month |
+| Mar 01 | `"0103"` | 1st day, 03rd month |
+| Mar 20 | `"2003"` | 20th day, 03rd month |
+
+<Note>
+This format works because Ramadan falls in Feb-Mar 2026. For other years, the date parsing logic in `lib/utils.ts` handles the conversion.
+</Note>
+
+### Converting to DateTime
+
+```ts lib/utils.ts
+import { DateTime } from "luxon";
+
+export function getIftarSehriForDate(date: DateTime, method: TimingKeys) {
+  const label = date.toFormat("ddLL");  // "1902"
+  const timing = timings[method].timings[label];
+  
+  return {
+    sehri: DateTime.fromFormat(timing.fajr, "H:mm"),
+    iftar: DateTime.fromFormat(timing.maghrib, "H:mm"),
+  };
+}
+```
+
+## Location offsets
+
+Offsets adjust timings for different cities/districts:
+
+### How offsets work
+
+<Steps>
+  <Step title="Base timings">
+    All timings in the JSON are for **Srinagar** (Kashmir's capital)
+  </Step>
+  <Step title="Apply offset">
+    For other locations, add/subtract minutes from the base time
+  </Step>
+  <Step title="Example">
+    - Srinagar Fajr: 05:49
+    - Baramulla offset: +1
+    - Baramulla Fajr: 05:50
+  </Step>
+</Steps>
+
+### Offset ranges
+
+<CardGroup cols={3}>
+  <Card title="Negative offsets" icon="minus">
+    -11 to -1 minutes
+    
+    Earlier prayer times
+    
+    (Southern/Eastern areas)
+  </Card>
+  <Card title="Zero offset" icon="location-dot">
+    0 minutes
+    
+    Base timing
+    
+    (Srinagar city)
+  </Card>
+  <Card title="Positive offsets" icon="plus">
+    +1 to +4 minutes
+    
+    Later prayer times
+    
+    (Northern/Western areas)
+  </Card>
+</CardGroup>
+
+### Applying offsets in code
+
+```ts lib/utils.ts
+import { Duration } from "luxon";
+import { Settings } from "./settings";
+
+export function getTimes() {
+  const now = DateTime.now();
+  const today = now.toFormat("ddLL");
+  const timingsToday = Settings.timings[today];
+  
+  // Get user's selected offset
+  const offset = Duration.fromObject({ minute: Settings.offset });
+  
+  // Apply offset to base timings
+  const sehriToday = DateTime.fromFormat(timingsToday.fajr, "H:mm")
+    .plus(offset);  // Add offset (negative offsets subtract)
+  
+  const iftarToday = DateTime.fromFormat(timingsToday.maghrib, "H:mm")
+    .plus(offset);
+  
+  return { sehriToday, iftarToday };
+}
+```
+
+## Fiqh-specific adjustments
+
+### Jaffaria (ETK) method
+
+Sehri ends 10 minutes **before** Fajr for precaution (ahtiyat):
+
+```ts lib/settings.ts
+export class Settings {
+  static get sehriOffet() {
+    if (Settings.method == "etk") {
+      return -10;  // 10 minutes before Fajr
+    }
+    if (Settings.method == "ajksa") {
+      return -5;   // 5 minutes before Fajr
+    }
+    return 0;      // Exactly at Fajr
+  }
+}
+```
+
+```ts lib/utils.ts
+const sehriOffset = Duration.fromObject({ minute: Settings.sehriOffet });
+
+const sehriToday = DateTime.fromFormat(timingsToday.fajr, "H:mm")
+  .plus(offset)
+  .plus(sehriOffset);  // Apply fiqh-specific adjustment
+```
+
+<Accordion title="Why different methods?">
+Different Islamic schools of thought (madhabs) have varying interpretations of when Fajr begins. The app respects all major methodologies practiced in Kashmir:
+
+- **Raheemiya (Hanafi):** Dar-ul-uloom Raheemiya
+- **ETK (Jaffaria):** Educational Trust Kashmir
+- **Ahle Hadees:** Jamiat Ahle Hadees J&K
+</Accordion>
+
+## Data access patterns
+
+### Direct import
+
+```ts
+import timings from "@/data/timings.json";
+
+// Get all methods
+const methods = Object.keys(timings);
+// ["raheemiya", "etk", "ahle_hadees"]
+
+// Get specific method data
+const raheemiyaData = timings.raheemiya;
+```
+
+### Through Settings class
+
+```ts
+import { Settings } from "@/lib/settings";
+
+// Get current user's timings
+const todayTimings = Settings.timings;
+// { "1902": { fajr: "05:49", maghrib: "18:21" }, ... }
+
+// Get available offsets for current method
+const availableOffsets = Settings.offsets;
+// { 0: "Srinagar", -1: "Pulwama, Kulgam", ... }
+```
+
+### Helper functions
+
+```ts lib/utils.ts
+// Get human-readable method name
+export const getLabel = (method: string) => {
+  if (method === "raheemiya")
+    return `Fiqah Hanafiya (${timings.raheemiya.name})`;
+  if (method === "etk")
+    return `Fiqah Jaffaria (${timings.etk.name})`;
+  return timings[method as TimingKeys].name;
+};
+
+// Usage:
+getLabel("raheemiya")  // "Fiqah Hanafiya (Raheemiya Calendar)"
+getLabel("etk")        // "Fiqah Jaffaria (Fiqah Jaffaria (ETK Calendar))"
+```
+
+## Example: Full data flow
+
+<Steps>
+  <Step title="User selects settings">
+    ```tsx
+    Settings.method = "etk";
+    Settings.offset = -1;  // Pulwama
+    ```
+  </Step>
+  <Step title="Get timings for today">
+    ```tsx
+    const times = getTimes();
+    // Fetches Feb 19 timings
+    // Base: fajr 05:48, maghrib 18:34
+    ```
+  </Step>
+  <Step title="Apply location offset">
+    ```tsx
+    // Pulwama: -1 minute
+    // fajr: 05:48 - 1 = 05:47
+    // maghrib: 18:34 - 1 = 18:33
+    ```
+  </Step>
+  <Step title="Apply fiqh adjustment">
+    ```tsx
+    // ETK: -10 minutes for Sehri
+    // sehri: 05:47 - 10 = 05:37
+    // iftar: 18:33 (no adjustment)
+    ```
+  </Step>
+  <Step title="Display to user">
+    ```tsx
+    Sehri: 05:37 AM
+    Iftar: 06:33 PM
+    ```
+  </Step>
+</Steps>
+
+## Updating timings data
+
+To update prayer times for a new year:
+
+1. Obtain official timings from recognized Islamic authorities
+2. Convert to `DDMM` format
+3. Update `data/timings.json` following the existing structure
+4. Update `NEXT_PUBLIC_RAMADAN_START_DATE` in environment variables
+5. Rebuild the application
+
+<Warning>
+Always verify timings with local religious authorities before deployment. Accuracy is critical for users' religious obligations.
+</Warning>

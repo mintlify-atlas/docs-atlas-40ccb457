@@ -1,0 +1,184 @@
+---
+title: Calendar export
+description: Export Ramadan timings to iCalendar format for automatic reminders in your favorite calendar app
+---
+
+Iftarkar allows you to export the entire month of Ramadan timings as iCalendar (.ics) files that work with Google Calendar, Apple Calendar, Outlook, and other calendar applications.
+
+## How to export
+
+<Steps>
+  <Step title="Click 'Download iCal' button">
+    On any calendar page, locate the "Download iCal" button in the interface:
+    
+    ```tsx
+    <button className="rounded-lg border border-border bg-card px-5 py-2.5 
+                       text-sm font-medium text-ink-secondary">
+      Download iCal
+    </button>
+    ```
+  </Step>
+
+  <Step title="Select your location offset">
+    A modal appears with location-specific timing adjustments:
+    
+    - Srinagar (default, no offset)
+    - Pulwama, Kulgam, Harmukh (-1 minute)
+    - Islamabad, Tral, Kud (-2 minutes)
+    - Pahalgam (-3 minutes)
+    - Leh (-11 minutes)
+    - Baramulla, Tangmarg, Sopore (+1 minute)
+    - Bandipora, Poonch (+2 minutes)
+    - Uri (+3 minutes)
+    - Teetwal, Karnah (+4 minutes)
+  </Step>
+
+  <Step title="Download the .ics file">
+    Click on your location to download the calendar file:
+    
+    ```tsx
+    <Link href={`/ical/${name}-${offset.offset}.ics`}>
+      {offset.name}
+    </Link>
+    ```
+  </Step>
+
+  <Step title="Import into your calendar app">
+    Open the downloaded .ics file with your calendar application. All 60 events (30 Sehri + 30 Iftar) will be imported automatically.
+  </Step>
+</Steps>
+
+## What gets exported
+
+Each iCalendar file contains:
+
+- **30 Sehri events**: One for each day of Ramadan
+- **30 Iftar events**: One for each day of Ramadan
+- **Precise timing**: Calculated with location-specific offsets
+- **Event metadata**: Summary, URL, and timezone information
+
+<Info>
+  All events are set to the Asia/Calcutta timezone (IST) to ensure correct timing regardless of where you view the calendar.
+</Info>
+
+## Calendar generation logic
+
+The iCalendar files are generated using the `ical-generator` library during the build process:
+
+```javascript
+const calendar = ical({ name: `${method.name}-${offset}` });
+
+for (let i = 0; i < 30; i++) {
+  const currDate = startDate.plus(Duration.fromObject({ day: i }));
+  const label = currDate.toFormat("ddLL");
+  const timing = method.timings[label];
+
+  const sehri = DateTime.fromFormat(`${timing.fajr} ${label}`, "H:mm ddLL")
+    .plus(Duration.fromObject({ minutes: offset.offset }))
+    .setZone("Asia/Calcutta");
+    
+  const iftar = DateTime.fromFormat(`${timing.maghrib} ${label}`, "H:mm ddLL")
+    .plus(Duration.fromObject({ minutes: offset.offset }))
+    .setZone("Asia/Calcutta");
+
+  calendar.createEvent({
+    start: iftar,
+    summary: "Iftar",
+    url: "https://namazpar.com",
+  });
+  
+  calendar.createEvent({
+    start: sehri,
+    summary: "Sehri",
+    url: "https://namazpar.com",
+  });
+}
+```
+
+## File naming convention
+
+Exported files follow this pattern:
+
+```
+{method-name}-{offset-minutes}.ics
+```
+
+<Tabs>
+  <Tab title="Example filenames">
+    - `Raheemiya Calendar-0.ics` (Srinagar)
+    - `Raheemiya Calendar--1.ics` (Pulwama)
+    - `Fiqah Jaffaria (ETK Calendar)-0.ics` (Srinagar)
+    - `Jamiat Ahle Hadees J&K--11.ics` (Leh)
+  </Tab>
+
+  <Tab title="Offset meanings">
+    - `0`: No time adjustment (Srinagar base timing)
+    - `-1` to `-11`: Minutes to subtract from base timing
+    - `+1` to `+4`: Minutes to add to base timing
+    
+    These offsets account for geographic variations in prayer times across Kashmir.
+  </Tab>
+</Tabs>
+
+## Supported calendar applications
+
+<Note>
+  The iCalendar format is a universal standard (RFC 5545) supported by:
+  
+  - Google Calendar
+  - Apple Calendar (macOS/iOS)
+  - Microsoft Outlook
+  - Mozilla Thunderbird
+  - Yahoo Calendar
+  - Any calendar app supporting .ics imports
+</Note>
+
+## Pre-generated files
+
+All calendar files are generated at build time and stored in the `public/ical/` directory:
+
+```javascript
+fs.rmSync("public/ical/", { recursive: true, force: true });
+fs.mkdirSync("public/ical/");
+
+for (let methodName of Object.keys(timings)) {
+  let method = timings[methodName];
+  let offsets = method.offsets;
+  offsets.push({ offset: 0 });
+  
+  for (let offset of method.offsets) {
+    // Generate calendar for each method + offset combination
+  }
+}
+```
+
+This approach ensures instant downloads without server-side processing.
+
+## Modal interface
+
+The download modal provides a clean selection interface:
+
+```tsx
+<ModalCard>
+  <ModalHeader>
+    <h2>Download Calendar</h2>
+    <ModalClose onClick={() => setHidden(true)} />
+  </ModalHeader>
+  <ModalBody>
+    {offsets.map((offset, key) => (
+      <Link
+        className="group flex items-center justify-between rounded-lg 
+                   border border-border bg-bg px-4 py-3"
+        href={`/ical/${name}-${offset.offset}.ics`}
+      >
+        {offset.name}
+        <span>↓</span>
+      </Link>
+    ))}
+  </ModalBody>
+</ModalCard>
+```
+
+<Tip>
+  After importing, you'll receive automatic notifications before each Sehri and Iftar based on your calendar app's default reminder settings.
+</Tip>

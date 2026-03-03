@@ -1,0 +1,309 @@
+---
+title: Architecture overview
+description: Tech stack, project structure, and architectural decisions behind Iftarkar
+---
+
+## Tech stack
+
+Iftarkar is built using modern web technologies optimized for performance and offline capability:
+
+<CardGroup cols={2}>
+  <Card title="Next.js 16" icon="react">
+    React framework with App Router and static export
+  </Card>
+  <Card title="TypeScript 5" icon="code">
+    Type-safe development with strict type checking
+  </Card>
+  <Card title="Tailwind CSS 3" icon="palette">
+    Utility-first CSS framework with custom design tokens
+  </Card>
+  <Card title="Luxon" icon="clock">
+    Modern date/time library for prayer time calculations
+  </Card>
+</CardGroup>
+
+### Core dependencies
+
+<CodeGroup>
+```json package.json
+{
+  "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@fortawesome/react-fontawesome": "^3.2.0",
+    "@next/third-parties": "^16.1.6",
+    "classnames": "^2.5.1",
+    "framer-motion": "^12.34.2",
+    "ical-generator": "^6.0.1",
+    "luxon": "^3.4.4",
+    "next": "^16.1.6",
+    "react": "^19.2.4"
+  }
+}
+```
+</CodeGroup>
+
+## Project structure
+
+Iftarkar follows Next.js App Router conventions with a clear separation of concerns:
+
+```
+iftarkar/
+├── app/                    # Next.js App Router
+│   ├── layout.tsx          # Root layout with fonts & metadata
+│   ├── page.tsx            # Home page with timer & duas
+│   ├── calendars/[slug]/   # Dynamic calendar pages
+│   │   └── page.tsx        # Calendar view with print support
+│   ├── ical/[filename]/    # iCal export API routes
+│   │   └── route.ts        # Generate .ics files
+│   └── manifest.ts         # PWA manifest configuration
+├── components/             # React components
+│   ├── timer.tsx           # Main countdown timer
+│   ├── settings.tsx        # Settings modal
+│   ├── navbar.tsx          # Navigation bar
+│   ├── modal.tsx           # Reusable modal components
+│   ├── duas.tsx            # Dua cards container
+│   └── ...
+├── lib/                    # Utilities and business logic
+│   ├── utils.ts            # Time calculations & helpers
+│   └── settings.ts         # Settings class (localStorage)
+├── data/                   # Static data
+│   └── timings.json        # Prayer timings for all methods
+├── public/                 # Static assets
+│   ├── icons/              # PWA icons
+│   └── logo_horizontal.svg # Brand logo
+└── tailwind.config.ts      # Tailwind customization
+```
+
+## Architecture decisions
+
+### Static site generation (SSG)
+
+Iftarkar uses Next.js static export for maximum reliability:
+
+<CodeGroup>
+```mjs next.config.mjs
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
+});
+
+const nextConfig = {
+  output: "export",  // Static HTML export
+};
+
+export default withPWA(nextConfig);
+```
+</CodeGroup>
+
+<Note>
+**Why static export?** During Ramadan, external APIs can be unreliable. By pre-generating all pages and embedding timings data, Iftarkar guarantees 100% uptime even if the server goes down.
+</Note>
+
+### Progressive Web App (PWA)
+
+The app is installable on mobile devices with offline support:
+
+- Service worker caches all assets
+- Works without internet after first load
+- Native app-like experience
+- Custom splash screens and icons
+
+### Client-side state management
+
+No external state management library needed:
+
+<Tabs>
+  <Tab title="Settings persistence">
+    ```ts lib/settings.ts
+    export class Settings {
+      static prefix = "settingsV2-";
+      
+      static get method(): string {
+        if (typeof window == "undefined") return Object.keys(timings)[0];
+        return (
+          localStorage.getItem(Settings.prefix + "timing") ??
+          Object.keys(timings)[0]
+        );
+      }
+      
+      static set method(value) {
+        localStorage.setItem(Settings.prefix + "timing", value);
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Component state">
+    ```tsx components/timer.tsx
+    export default function Timer() {
+      const [timeEnd, setTimeEnd] = useState<DateTime>();
+      const [timeLeft, setTimeLeft] = useState<Duration>();
+      const [upcomingLabel, setUpcomingLabel] = useState("");
+      const [progress, setProgress] = useState(0);
+      
+      useEffect(() => {
+        calculate();
+        const interval = setInterval(() => {
+          calculate();
+        }, 1000);
+        return () => clearInterval(interval);
+      }, []);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Design system
+
+### Custom color palette
+
+Tailwind is extended with warm, Islamic-inspired colors:
+
+<CodeGroup>
+```ts tailwind.config.ts
+const config: Config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: "#f0ebe3",           // Warm background
+        "bg-warm": "#e8e2d8",    // Warmer variant
+        card: "#ffffff",          // Card background
+        accent: "#16a34a",        // Islamic green
+        "accent-light": "#dcfce7",
+        "accent-dark": "#15803d",
+        orange: "#ea580c",        // Active state
+        ink: "#111827",           // Primary text
+        "ink-secondary": "#4b5563",
+        "ink-muted": "#9ca3af",
+        border: "#d6d0c4",
+      },
+      fontFamily: {
+        sans: ["var(--font-jakarta)"],
+        mono: ["var(--font-roboto-mono)"],
+        arabic: ["var(--font-amiri)"],
+      },
+    },
+  },
+};
+```
+</CodeGroup>
+
+### Typography
+
+Three Google Fonts are loaded for different purposes:
+
+```tsx app/layout.tsx
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-jakarta",
+});
+
+const roboto_mono = Roboto_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-roboto-mono",  // For times/countdowns
+});
+
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: "400",
+  variable: "--font-amiri",  // For Arabic duas
+});
+```
+
+## Rendering strategy
+
+### Hybrid approach
+
+<Accordion title="Static pages">
+- Home page (`/`)
+- All calendar pages (`/calendars/raheemiya`, `/calendars/etk`, etc.)
+- Pre-generated at build time using `generateStaticParams()`
+</Accordion>
+
+<Accordion title="Dynamic routes">
+- iCal export API (`/ical/[filename]/route.ts`)
+- Handles runtime generation of `.ics` calendar files
+</Accordion>
+
+<Accordion title="Client components">
+All interactive components use `"use client"` directive:
+- Timer with live countdown
+- Settings modal
+- Navigation menu
+- Print buttons
+</Accordion>
+
+## Performance optimizations
+
+### Hydration safety
+
+The timer component prevents hydration mismatches:
+
+```tsx components/timer.tsx
+const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  setMounted(true);
+}, []);
+
+if (!mounted) {
+  return (
+    <div className="w-full space-y-4 animate-pulse">
+      {/* Skeleton UI */}
+    </div>
+  );
+}
+```
+
+### Image optimization
+
+Next.js Image component for optimized loading:
+
+```tsx
+import Image from "next/image";
+import logo from "@/public/logo_horizontal.svg";
+
+<Image
+  className="h-8 md:h-10"
+  src={logo}
+  alt="Iftarkar Logo"
+/>
+```
+
+### Code splitting
+
+Automatic code splitting by route:
+- Home page bundle
+- Calendar page bundle
+- Shared component chunks
+
+## Build and deployment
+
+### Build process
+
+```bash
+npm run build
+```
+
+This generates:
+- Static HTML files in `out/`
+- Optimized JavaScript bundles
+- Service worker for PWA
+- Pre-rendered calendar pages
+
+### Deployment platforms
+
+Optimized for:
+- **Vercel** (recommended)
+- **Netlify**
+- **Cloudflare Pages**
+- Any static hosting service
+
+<Note>
+The static export ensures the app works on any hosting platform without server-side runtime requirements.
+</Note>

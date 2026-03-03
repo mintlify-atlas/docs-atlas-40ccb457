@@ -1,0 +1,290 @@
+---
+title: Multiple schools of thought
+description: Support for different Islamic schools of jurisprudence with authentic timings for Kashmir
+---
+
+Iftarkar supports multiple schools of Islamic jurisprudence (fiqh), each with their own calculation methodologies and precautionary measures for Ramadan timings.
+
+## Available methods
+
+Three authentic calculation methods are available:
+
+<Tabs>
+  <Tab title="Fiqah Hanafiya">
+    **Source**: Raheemiya Calendar
+    
+    The most widely followed school in Kashmir, providing timings based on Hanafi jurisprudence principles.
+    
+    ```json
+    {
+      "raheemiya": {
+        "name": "Raheemiya Calendar",
+        "timings": {
+          "1902": { "fajr": "05:49", "maghrib": "18:21" },
+          // ... 30 days of Ramadan
+        }
+      }
+    }
+    ```
+    
+    **Sehri timing**: Standard Fajr time (no offset)
+  </Tab>
+
+  <Tab title="Fiqah Jaffaria">
+    **Source**: ETK Calendar (Ehsaas Trust Kashmir)
+    
+    Follows Jaffari jurisprudence with specific precautionary measures.
+    
+    ```json
+    {
+      "etk": {
+        "name": "Fiqah Jaffaria (ETK Calendar)",
+        "timings": {
+          "1902": { "fajr": "05:48", "maghrib": "18:34" },
+          // ... 30 days of Ramadan
+        }
+      }
+    }
+    ```
+    
+    **Sehri timing**: Ends 10 minutes before Fajr (ahtiyat/precaution)
+    
+    <Note>
+      The ETK method displays a notice: "Sehri ends 10 minutes before Fajr for ahtiyat."
+    </Note>
+  </Tab>
+
+  <Tab title="Ahle Hadees">
+    **Source**: Jamiat Ahle Hadees J&K
+    
+    Based on Ahle Hadees methodology for the Kashmir region.
+    
+    ```json
+    {
+      "ahle_hadees": {
+        "name": "Jamiat Ahle Hadees J&K",
+        "timings": {
+          "1902": { "fajr": "05:50", "maghrib": "18:19" },
+          // ... 30 days of Ramadan
+        }
+      }
+    }
+    ```
+    
+    **Sehri timing**: Standard Fajr time
+  </Tab>
+</Tabs>
+
+## Switching between methods
+
+<Steps>
+  <Step title="Open settings">
+    Click the gear icon (⚙️) in the top-right corner of the timer interface:
+    
+    ```tsx
+    <button
+      onClick={() => setSettingsHidden(false)}
+      aria-label="Settings"
+    >
+      <FontAwesomeIcon icon={faCog} />
+    </button>
+    ```
+  </Step>
+
+  <Step title="Select your preferred method">
+    Choose from the dropdown menu:
+    
+    ```tsx
+    <select
+      onChange={(e) => {
+        Settings.method = e.target.value;
+        window.location.reload();
+      }}
+      defaultValue={Settings.method}
+    >
+      {Object.entries(Settings.methods).map(([key, name]) => (
+        <option key={key} value={key}>
+          {name}
+        </option>
+      ))}
+    </select>
+    ```
+  </Step>
+
+  <Step title="Page reloads with new timings">
+    The application automatically reloads to apply your selected method across all features:
+    - Main timer display
+    - Calendar views
+    - iCal exports
+    - Print layouts
+  </Step>
+</Steps>
+
+<Info>
+  Your preference is saved in browser localStorage and persists across sessions.
+</Info>
+
+## Precautionary offsets
+
+Different schools apply different precautionary measures (ihtiyat) for Sehri:
+
+```typescript
+static get sehriOffet() {
+  if (Settings.method == "etk") {
+    return -10; // 10 minutes before Fajr
+  }
+  if (Settings.method == "ajksa") {
+    return -5; // 5 minutes before Fajr
+  }
+  return 0; // Standard Fajr time
+}
+```
+
+This offset is automatically applied in the timer calculations:
+
+```typescript
+const sehriToday = DateTime.fromFormat(timingsToday.fajr, "H:mm")
+  .plus(offset)
+  .plus(sehriOffset); // School-specific adjustment
+```
+
+## Visual method identification
+
+The active method is displayed prominently in the timer header:
+
+```tsx
+<div>
+  <p className="text-[15px] font-bold tracking-tight text-ink">
+    {methodLabel}
+  </p>
+  <p className="text-xs font-medium text-ink-muted">
+    {offsetLabel}
+  </p>
+</div>
+```
+
+For example:
+- **Fiqah Hanafiya (Raheemiya Calendar)**
+- **Fiqah Jaffaria (ETK Calendar)**
+- **Jamiat Ahle Hadees J&K**
+
+## Location-based adjustments
+
+Each method includes geographic offsets for different areas of Kashmir:
+
+```json
+"offsets": [
+  { "name": "Pulwama, Kulgam, Harmukh", "offset": -1 },
+  { "name": "Islamabad, Tral, Kud", "offset": -2 },
+  { "name": "Pahalgam", "offset": -3 },
+  { "name": "Leh", "offset": -11 },
+  { "name": "Baramulla, Tangmarg, Sopore", "offset": 1 },
+  { "name": "Bandipora, Poonch", "offset": 2 },
+  { "name": "Uri", "offset": 3 },
+  { "name": "Teetwal, Karnah", "offset": 4 }
+]
+```
+
+<Tip>
+  All three methods provide the same location offsets, ensuring consistency across different schools of thought.
+</Tip>
+
+## Method label formatting
+
+The application uses intelligent label formatting:
+
+```typescript
+export const getLabel = (method: string) => {
+  if (method === "raheemiya")
+    return `Fiqah Hanafiya (${timings[method].name})`;
+  if (method === "etk")
+    return `Fiqah Jaffaria (${timings[method].name})`;
+  return timings[method].name;
+};
+```
+
+This adds the fiqh school name for clarity while displaying the source calendar name.
+
+## Data structure
+
+Each method follows this structure in `timings.json`:
+
+```json
+{
+  "method_key": {
+    "name": "Display Name",
+    "offsets": [
+      { "name": "Location", "offset": minutes }
+    ],
+    "timings": {
+      "DDMM": { "fajr": "HH:MM", "maghrib": "HH:MM" }
+    }
+  }
+}
+```
+
+Where:
+- `method_key`: Internal identifier (raheemiya, etk, ahle_hadees)
+- `name`: Human-readable display name
+- `offsets`: Location-specific time adjustments
+- `timings`: Day-by-day Fajr and Maghrib times
+
+## Settings persistence
+
+User preferences are stored in localStorage:
+
+```typescript
+static prefix = "settingsV2-";
+
+static get method(): string {
+  return localStorage.getItem(Settings.prefix + "timing") 
+    ?? Object.keys(timings)[0];
+}
+
+static set method(value) {
+  localStorage.setItem(Settings.prefix + "timing", value);
+}
+```
+
+The `settingsV2-` prefix ensures backward compatibility with future updates.
+
+## Contextual notifications
+
+When using specific methods, helpful reminders appear:
+
+```tsx
+{Settings.method == "etk" && (
+  <p className="text-xs font-medium text-ink-muted">
+    Sehri ends 10 minutes before Fajr for ahtiyat.
+  </p>
+)}
+```
+
+These notifications ensure users understand the timing methodology being applied.
+
+## Default method
+
+If no method is selected, the first available method is used:
+
+```typescript
+return localStorage.getItem(Settings.prefix + "timing") 
+  ?? Object.keys(timings)[0]; // Falls back to 'raheemiya'
+```
+
+<Note>
+  The default method is typically Raheemiya Calendar (Fiqah Hanafiya) as it's the most widely followed in Kashmir.
+</Note>
+
+## Method availability
+
+All three methods are dynamically loaded from the timings data:
+
+```typescript
+static get methods(): { [key: string]: string } {
+  return Object.fromEntries(
+    Object.entries(timings).map(([key]) => [key, getLabel(key)])
+  );
+}
+```
+
+This ensures the settings dropdown always reflects available calculation methods.

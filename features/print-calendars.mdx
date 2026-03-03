@@ -1,0 +1,224 @@
+---
+title: Print calendars
+description: Generate printer-friendly Ramadan calendars in full color or black & white
+---
+
+Iftarkar provides optimized print layouts for creating physical Ramadan calendars. Choose between full-color printing or economical black & white output.
+
+## Printing options
+
+Two printing modes are available to suit different printer capabilities and preferences:
+
+<Tabs>
+  <Tab title="Print Color">
+    ```tsx
+    <button onClick={() => {
+      document.body.classList.remove("print-bw");
+      window.print();
+    }}>
+      Print Color
+    </button>
+    ```
+    
+    **Best for:**
+    - Color printers
+    - Home printing
+    - Enhanced visual appeal
+    - Preserving the emerald green theme
+  </Tab>
+
+  <Tab title="Print B&W">
+    ```tsx
+    <button onClick={() => {
+      document.body.classList.add("print-bw");
+      window.print();
+    }}>
+      Print B&W
+    </button>
+    ```
+    
+    **Best for:**
+    - Office printers
+    - Cost-effective printing
+    - Grayscale/monochrome printers
+    - Reduced ink consumption
+  </Tab>
+</Tabs>
+
+## How to print a calendar
+
+<Steps>
+  <Step title="Navigate to your preferred calendar">
+    Visit the calendars page and select your school of thought:
+    
+    - Fiqah Hanafiya (Raheemiya Calendar)
+    - Fiqah Jaffaria (ETK Calendar)
+    - Jamiat Ahle Hadees J&K
+  </Step>
+
+  <Step title="Choose print mode">
+    Click either the "Print Color" or "Print B&W" button at the top of the calendar page.
+  </Step>
+
+  <Step title="Configure printer settings">
+    Your browser's print dialog will open. Recommended settings:
+    
+    - **Orientation**: Portrait or Landscape (depending on calendar layout)
+    - **Margins**: Minimal or Custom
+    - **Scale**: Fit to page or 100%
+  </Step>
+
+  <Step title="Print or save as PDF">
+    Either send directly to your printer or save as PDF for digital storage.
+  </Step>
+</Steps>
+
+<Info>
+  The print interface automatically hides navigation elements, buttons, and other non-essential UI components using the `.hide-print` class.
+</Info>
+
+## Print-optimized styling
+
+The print layout removes interactive elements and optimizes for paper:
+
+```tsx
+<div className="hide-print flex flex-row gap-x-2">
+  <button>Print Color</button>
+  <button>Print B&W</button>
+</div>
+```
+
+Elements marked with `hide-print` are automatically hidden when printing:
+
+- Navigation bars
+- Footer links
+- Action buttons
+- Settings controls
+- Modal overlays
+
+## Color vs black & white
+
+The distinction is controlled through a CSS class toggle:
+
+### Color mode (default)
+
+```tsx
+document.body.classList.remove("print-bw");
+window.print();
+```
+
+Preserves the full visual design:
+- Emerald green gradient backgrounds
+- Accent colors for emphasis
+- Border colors and shadows
+- Brand color scheme
+
+### Black & white mode
+
+```tsx
+document.body.classList.add("print-bw");
+window.print();
+```
+
+Applies grayscale transformation:
+- Converts all colors to grayscale equivalents
+- Maintains contrast for readability
+- Reduces ink usage significantly
+- Optimized for monochrome printers
+
+<Note>
+  The `print-bw` class likely applies CSS filters or grayscale transformations via print media queries in the stylesheet.
+</Note>
+
+## Calendar selection modal
+
+Users can access different calendars through a modal interface:
+
+```tsx
+<ModalBody>
+  {Object.entries(timings).map(([key, value]) => (
+    <Link
+      href={`/calendars/${key}`}
+      className="group flex items-center justify-between"
+    >
+      {value.name}
+      <span>→</span>
+    </Link>
+  ))}
+</ModalBody>
+```
+
+Available calendars:
+- **raheemiya**: Raheemiya Calendar
+- **etk**: Fiqah Jaffaria (ETK Calendar)
+- **ahle_hadees**: Jamiat Ahle Hadees J&K
+
+## What's included in printed calendars
+
+Each printed calendar displays:
+
+- Complete 30-day Ramadan schedule
+- Sehri (Fajr) timings for each day
+- Iftar (Maghrib) timings for each day
+- Date information (Gregorian calendar)
+- Islamic calendar dates (Ramadan 1-30, 1447 AH)
+- School of thought identifier
+- Location-specific timing adjustments
+
+<Tip>
+  For best results, print in landscape orientation to accommodate wider table layouts, or use portrait for compact single-column designs.
+</Tip>
+
+## Browser print API
+
+The feature leverages the native `window.print()` API, which:
+
+- Opens the browser's built-in print dialog
+- Respects user's printer preferences
+- Allows PDF export as an alternative
+- Maintains print history in the browser
+- Works across all modern browsers
+
+## Print preview
+
+Before committing to paper:
+
+1. Use your browser's print preview feature
+2. Check that all timings are visible
+3. Verify dates are correctly formatted
+4. Ensure the layout fits your paper size
+5. Confirm color/B&W mode is as expected
+
+<Info>
+  Most browsers allow you to save the print output as a PDF file, which is perfect for sharing digitally or printing later.
+</Info>
+
+## Responsive print layout
+
+The calendar automatically adjusts its layout for printing:
+
+- Tables expand to fill available width
+- Font sizes are optimized for readability
+- Page breaks are strategically placed
+- Headers and footers are simplified
+- Background graphics are retained (in color mode)
+
+## Cost-effective printing tips
+
+<Steps>
+  <Step title="Use black & white mode">
+    Save 60-80% on ink costs by using the B&W print option.
+  </Step>
+
+  <Step title="Print multiple copies">
+    Distribute calendars to family members, mosques, or community centers.
+  </Step>
+
+  <Step title="Save as PDF first">
+    Review the PDF output before printing to avoid wasted paper.
+  </Step>
+
+  <Step title="Adjust print scale">
+    Scale down to 90-95% if margins are too tight for your printer.
+  </Step>
+</Steps>

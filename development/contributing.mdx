@@ -1,0 +1,525 @@
+---
+title: Contributing guidelines
+description: How to contribute to Iftarkar - setup, workflow, and best practices
+---
+
+## Getting started
+
+Thank you for your interest in contributing to Iftarkar! This guide will help you set up your development environment and understand the contribution workflow.
+
+### Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node-js">
+    Version 18 or newer required
+  </Card>
+  <Card title="Package manager" icon="box">
+    npm or yarn
+  </Card>
+  <Card title="Git" icon="git-alt">
+    For version control
+  </Card>
+  <Card title="Code editor" icon="code">
+    VS Code recommended
+  </Card>
+</CardGroup>
+
+### Local setup
+
+<Steps>
+  <Step title="Fork and clone">
+    Fork the repository on GitHub, then clone your fork:
+    
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/iftarkar.git
+    cd iftarkar
+    ```
+  </Step>
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+  </Step>
+  <Step title="Start development server">
+    ```bash
+    npm run dev
+    ```
+    
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+  </Step>
+  <Step title="Verify setup">
+    - Timer should display with countdown
+    - Settings modal should open
+    - Calendar pages should load
+    - No console errors
+  </Step>
+</Steps>
+
+<Note>
+The PWA service worker is disabled in development mode to prevent caching issues.
+</Note>
+
+## Development workflow
+
+### Branch strategy
+
+<Tabs>
+  <Tab title="Feature branches">
+    ```bash
+    git checkout -b feature/AmazingFeature
+    ```
+    
+    For new features, enhancements, or components.
+  </Tab>
+  <Tab title="Bug fix branches">
+    ```bash
+    git checkout -b fix/BugDescription
+    ```
+    
+    For bug fixes and corrections.
+  </Tab>
+  <Tab title="Documentation branches">
+    ```bash
+    git checkout -b docs/UpdateSection
+    ```
+    
+    For documentation improvements.
+  </Tab>
+</Tabs>
+
+### Making changes
+
+<Steps>
+  <Step title="Create a branch">
+    ```bash
+    git checkout -b feature/YourFeature
+    ```
+  </Step>
+  <Step title="Make your changes">
+    Edit files, add features, or fix bugs following our code style.
+  </Step>
+  <Step title="Test thoroughly">
+    - Check all prayer time calculations
+    - Test different methods (Raheemiya, ETK, Ahle Hadees)
+    - Test different location offsets
+    - Verify responsive design on mobile
+    - Check print functionality
+  </Step>
+  <Step title="Lint and format">
+    ```bash
+    npm run lint:fix
+    npm run format:fix
+    ```
+  </Step>
+  <Step title="Commit your changes">
+    ```bash
+    git add .
+    git commit -m 'Add some AmazingFeature'
+    ```
+  </Step>
+  <Step title="Push to your fork">
+    ```bash
+    git push origin feature/AmazingFeature
+    ```
+  </Step>
+</Steps>
+
+### Creating a pull request
+
+1. Go to the original repository on GitHub
+2. Click "New Pull Request"
+3. Select your fork and branch
+4. Fill out the PR template with:
+   - Clear description of changes
+   - Screenshots for UI changes
+   - Testing steps
+   - Related issue numbers
+5. Submit the PR
+
+<Note>
+Maintainers will review your PR and may request changes. Be responsive to feedback and engage in constructive discussion.
+</Note>
+
+## Code style guidelines
+
+### TypeScript
+
+<Tabs>
+  <Tab title="Type safety">
+    ```tsx
+    // ✅ Always type your props
+    interface ComponentProps {
+      value: number;
+      onChange: (newValue: number) => void;
+    }
+
+    export default function Component({ value, onChange }: ComponentProps) {
+      // ...
+    }
+
+    // ❌ Avoid
+    export default function Component({ value, onChange }: any) {
+      // ...
+    }
+    ```
+  </Tab>
+  <Tab title="Imports">
+    ```tsx
+    // ✅ Use @ alias for imports
+    import { Settings } from "@/lib/settings";
+    import timings from "@/data/timings.json";
+
+    // ❌ Avoid relative paths
+    import { Settings } from "../../lib/settings";
+    ```
+  </Tab>
+  <Tab title="Exports">
+    ```tsx
+    // ✅ Use default export for components
+    export default function Timer() {
+      // ...
+    }
+
+    // ✅ Named exports for utilities
+    export function getTimes() {
+      // ...
+    }
+
+    export const getLabel = (method: string) => {
+      // ...
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### React best practices
+
+<Accordion title="Client vs. Server components">
+```tsx
+// Use "use client" only when needed
+"use client";
+import { useState } from "react";
+
+export default function InteractiveComponent() {
+  const [state, setState] = useState(0);
+  // ...
+}
+```
+
+Server components (no directive) for static content:
+```tsx
+export default function StaticComponent() {
+  return <div>Static content</div>;
+}
+```
+</Accordion>
+
+<Accordion title="State management">
+```tsx
+// ✅ Use appropriate hooks
+const [value, setValue] = useState(0);
+
+useEffect(() => {
+  // Side effects
+  return () => {
+    // Cleanup
+  };
+}, [dependencies]);
+
+// ✅ Avoid unnecessary re-renders
+const memoizedValue = useMemo(() => expensiveCalculation(), [deps]);
+const memoizedCallback = useCallback(() => { /* ... */ }, [deps]);
+```
+</Accordion>
+
+<Accordion title="Conditional rendering">
+```tsx
+// ✅ Early returns for simple conditions
+if (hidden) return null;
+
+// ✅ Ternary for inline conditions
+{isActive ? <ActiveView /> : <InactiveView />}
+
+// ✅ Logical AND for optional rendering
+{showMessage && <Message />}
+```
+</Accordion>
+
+### Styling conventions
+
+<CodeGroup>
+```tsx Tailwind classes
+// ✅ Logical grouping and ordering
+<div className="
+  flex items-center justify-between  // Layout
+  px-4 py-2                          // Spacing
+  rounded-lg                         // Borders
+  bg-card text-ink                   // Colors
+  transition-all duration-300        // Animations
+  hover:bg-bg-warm                   // States
+">
+  {/* ... */}
+</div>
+
+// ✅ Use custom colors from config
+className="bg-accent text-white"
+className="border border-border"
+
+// ❌ Avoid arbitrary values when possible
+className="bg-[#16a34a]"  // Use bg-accent instead
+```
+
+```tsx Conditional classes
+// ✅ Use classnames package
+import classNames from "classnames";
+
+className={classNames(
+  "base-class",
+  {
+    "active-class": isActive,
+    "disabled-class": isDisabled,
+  }
+)}
+
+// ❌ Avoid template literals
+className={`base-class ${isActive ? 'active-class' : ''}`}
+```
+</CodeGroup>
+
+## Testing guidelines
+
+### Manual testing checklist
+
+Before submitting a PR, verify:
+
+<AccordionGroup>
+  <Accordion title="Prayer time accuracy">
+    - [ ] Correct times for all three methods
+    - [ ] Location offsets apply correctly
+    - [ ] ETK method shows 10-minute precaution
+    - [ ] Times update at midnight
+  </Accordion>
+  <Accordion title="UI functionality">
+    - [ ] Timer counts down correctly
+    - [ ] Settings modal opens/closes
+    - [ ] Method/location changes persist
+    - [ ] Print buttons work (color and B&W)
+    - [ ] Responsive design on mobile/tablet/desktop
+  </Accordion>
+  <Accordion title="Edge cases">
+    - [ ] First day of Ramadan
+    - [ ] Last day of Ramadan
+    - [ ] Time transitions (pre-sehri → fasting → post-iftar)
+    - [ ] Browser refresh preserves settings
+  </Accordion>
+  <Accordion title="Performance">
+    - [ ] No console errors
+    - [ ] Smooth animations
+    - [ ] Fast page loads
+    - [ ] PWA installs correctly
+  </Accordion>
+</AccordionGroup>
+
+### Browser compatibility
+
+Test on:
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest)
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+## Project-specific guidelines
+
+### Prayer time calculations
+
+<Warning>
+**Critical:** Always verify prayer time logic with religious scholars. Incorrect timings can affect users' religious obligations.
+</Warning>
+
+```ts lib/utils.ts
+// When modifying time calculations:
+export function getTimes() {
+  // 1. Fetch base timings from JSON
+  const timingsToday = Settings.timings[today];
+  
+  // 2. Apply location offset
+  const offset = Duration.fromObject({ minute: Settings.offset });
+  
+  // 3. Apply fiqh-specific offset
+  const sehriOffset = Duration.fromObject({ minute: Settings.sehriOffet });
+  
+  // 4. Combine all adjustments
+  const sehriToday = DateTime.fromFormat(timingsToday.fajr, "H:mm")
+    .plus(offset)
+    .plus(sehriOffset);
+  
+  return { /* ... */ };
+}
+```
+
+### Data updates
+
+When updating `data/timings.json`:
+
+1. **Source verification:** Only use timings from recognized Islamic authorities
+2. **Format consistency:** Follow `DDMM` date format and `HH:mm` time format
+3. **Complete data:** Include all 30 days for all methods
+4. **Offset validation:** Verify offset values with local communities
+
+### Accessibility
+
+Ensure new features are accessible:
+
+```tsx
+// ✅ Use semantic HTML
+<button onClick={handleClick}>Click me</button>
+
+// ✅ Add ARIA labels for icon buttons
+<button aria-label="Settings">
+  <FontAwesomeIcon icon={faCog} />
+</button>
+
+// ✅ Support keyboard navigation
+<div
+  role="button"
+  tabIndex={0}
+  onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+>
+  {/* ... */}
+</div>
+```
+
+## Common tasks
+
+### Adding a new component
+
+<Steps>
+  <Step title="Create component file">
+    ```bash
+    touch components/MyComponent.tsx
+    ```
+  </Step>
+  <Step title="Define component">
+    ```tsx components/MyComponent.tsx
+    "use client";  // If interactive
+
+    interface MyComponentProps {
+      value: string;
+    }
+
+    export default function MyComponent({ value }: MyComponentProps) {
+      return (
+        <div className="card">
+          {value}
+        </div>
+      );
+    }
+    ```
+  </Step>
+  <Step title="Import and use">
+    ```tsx app/page.tsx
+    import MyComponent from "@/components/MyComponent";
+
+    export default function Page() {
+      return <MyComponent value="Hello" />;
+    }
+    ```
+  </Step>
+</Steps>
+
+### Adding a new utility function
+
+```ts lib/utils.ts
+/**
+ * Calculate prayer time difference in minutes
+ * @param time1 - First prayer time
+ * @param time2 - Second prayer time
+ * @returns Difference in minutes
+ */
+export function calculateTimeDifference(
+  time1: DateTime,
+  time2: DateTime
+): number {
+  return time2.diff(time1, 'minutes').minutes;
+}
+```
+
+### Updating the design system
+
+To add new colors or theme tokens:
+
+```ts tailwind.config.ts
+const config: Config = {
+  theme: {
+    extend: {
+      colors: {
+        // Add your new color
+        "my-color": "#hexcode",
+        "my-color-light": "#hexcode",
+      },
+    },
+  },
+};
+```
+
+Then use in components:
+```tsx
+<div className="bg-my-color text-white">
+  {/* ... */}
+</div>
+```
+
+## Code review process
+
+When your PR is submitted:
+
+1. **Automated checks** run (linting, type checking)
+2. **Maintainer review** provides feedback
+3. **Discussion** on implementation approach
+4. **Approval** once all feedback is addressed
+5. **Merge** into main branch
+
+### Responding to feedback
+
+- Be respectful and open to suggestions
+- Ask questions if feedback is unclear
+- Make requested changes promptly
+- Push new commits to the same branch
+- Re-request review when ready
+
+## Getting help
+
+<CardGroup cols={2}>
+  <Card title="GitHub Issues" icon="github">
+    Report bugs or request features
+  </Card>
+  <Card title="Discussions" icon="comments">
+    Ask questions or share ideas
+  </Card>
+  <Card title="Original Developer" icon="user">
+    Contact: [Haider Ali Punjabi](https://haider.id)
+  </Card>
+  <Card title="Current Maintainer" icon="user-gear">
+    Syed Fahad
+  </Card>
+</CardGroup>
+
+## Recognition
+
+Contributors are recognized:
+
+- In the repository's README
+- In release notes for their contributions
+- Through GitHub's contributor graph
+
+<Note>
+All contributions, no matter how small, are valued and appreciated. Thank you for helping make Iftarkar better for the Muslim community in Kashmir!
+</Note>
+
+## License
+
+By contributing to Iftarkar, you agree that your contributions will be licensed under the MIT License.
+
+See the [LICENSE](https://github.com/SyedFahad-CS/iftarkar/blob/main/LICENSE) file for details.

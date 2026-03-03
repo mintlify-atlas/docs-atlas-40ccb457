@@ -1,0 +1,143 @@
+---
+title: Prayer time tracking
+description: Real-time countdown timer with smart phase detection for Sehri and Iftar timings
+---
+
+Iftarkar provides an intelligent prayer time tracking system with a real-time countdown timer that automatically adapts to the current phase of the day during Ramadan.
+
+## How it works
+
+The timer continuously monitors the current time and calculates the next prayer event (Sehri or Iftar) based on authentic timings for Kashmir.
+
+<Steps>
+  <Step title="Automatic phase detection">
+    The system detects three distinct phases throughout the day:
+    
+    - **Pre-Sehri**: Before the fast begins (shows countdown to Fajr)
+    - **Fasting**: During the fasting period (shows countdown to Maghrib)
+    - **Post-Iftar**: After breaking the fast (shows countdown to next Sehri)
+  </Step>
+
+  <Step title="Real-time calculations">
+    Prayer times are calculated using the `getTimes()` function which:
+    
+    ```typescript
+    const times = getTimes();
+    setTimeEnd(times.next);
+    setUpcomingLabel(times.label);
+    setPhase(times.phase);
+    setTimeLeft(times.next.diffNow(["days", "hours", "minutes", "second"]));
+    ```
+    
+    The timer updates every second to show precise remaining time.
+  </Step>
+
+  <Step title="Visual progress tracking">
+    A segmented progress bar displays elapsed time between prayer events:
+    
+    ```typescript
+    setProgress(
+      (times.previous.diffNow().milliseconds * -100) /
+        times.next.diff(times.previous).milliseconds
+    );
+    ```
+    
+    This provides visual feedback showing how far into the current phase you are.
+  </Step>
+</Steps>
+
+## Prayer time cards
+
+The interface displays two cards side-by-side showing Sehri and Iftar times:
+
+<Info>
+  The active prayer (currently happening or upcoming) is highlighted with:
+  - A green "NEXT" badge for the upcoming prayer
+  - An orange "NOW" badge with a checkmark for the current phase
+  - Enhanced shadow and accent colors
+</Info>
+
+### Card states
+
+<Tabs>
+  <Tab title="Pre-Sehri phase">
+    **Left card**: Suhoor Time (with "NEXT" badge)  
+    **Right card**: Iftar Time (previous, dimmed)  
+    **Banner**: "Fast Begins In"
+    
+    The countdown shows time remaining until Sehri ends.
+  </Tab>
+
+  <Tab title="Fasting phase">
+    **Left card**: Fasting (with "NOW" badge)  
+    **Right card**: Iftar (with "NEXT" badge)  
+    **Banner**: "Iftar In"
+    
+    The countdown shows time remaining until Iftar.
+  </Tab>
+
+  <Tab title="Post-Iftar phase">
+    **Left card**: Suhoor Ends At (with "NEXT" badge)  
+    **Right card**: Iftar Time (with "NOW" badge)  
+    **Banner**: "Suhoor Ends In"
+    
+    The countdown shows time until tomorrow's Sehri.
+  </Tab>
+</Tabs>
+
+## Countdown display
+
+The main countdown timer features:
+
+- **Live pulse indicator**: Animated green dot showing real-time updates
+- **Monospace clock display**: Clear HH:MM:SS format for easy reading
+- **Segmented progress bar**: 20-segment visual progress indicator
+- **Percentage display**: Precise progress calculation
+- **Gradient background**: Emerald gradient with decorative glow effects
+
+<Tip>
+  The timer uses Luxon's `DateTime` library for timezone-aware calculations, ensuring accuracy for Kashmir's IST timezone (Asia/Calcutta).
+</Tip>
+
+## Precision timing logic
+
+The system retrieves timings for three days (yesterday, today, tomorrow) to handle edge cases:
+
+```typescript
+const today = now.toFormat("ddLL");
+const yesterday = now.minus(oneDayDuration).toFormat("ddLL");
+const tomorrow = now.plus(oneDayDuration).toFormat("ddLL");
+
+const timingsToday = Settings.timings[today];
+const timingsTomorrow = Settings.timings[tomorrow];
+const timingsYesterday = Settings.timings[yesterday];
+```
+
+This ensures seamless transitions between days and accurate calculations during overnight periods.
+
+## School-specific adjustments
+
+<Note>
+  Different Islamic schools of thought have varying precautionary buffers:
+  
+  - **Fiqah Jaffaria (ETK)**: Sehri ends 10 minutes before Fajr
+  - **Fiqah Hanafiya**: Standard Fajr time for Sehri end
+  
+  These adjustments are automatically applied based on your selected method.
+</Note>
+
+## Hydration-safe rendering
+
+The timer implements a skeleton loading state to prevent hydration mismatches:
+
+```typescript
+if (!mounted) {
+  return (
+    <div className="w-full space-y-4 animate-pulse">
+      {/* Skeleton UI */}
+    </div>
+  );
+}
+```
+
+This ensures smooth server-side rendering without timing inconsistencies.

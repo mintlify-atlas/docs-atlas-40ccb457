@@ -1,0 +1,279 @@
+---
+title: Progressive Web App setup
+description: Install Iftarkar as a native-like app on Android and iOS with offline support
+---
+
+## What is a PWA?
+
+A Progressive Web App (PWA) is a web application that can be installed on your device and works like a native app. Iftarkar is built as a full-featured PWA, offering:
+
+- **Offline functionality**: Access timings even without internet connection
+- **Native app experience**: Runs in standalone mode without browser UI
+- **Fast performance**: Optimized loading and caching
+- **Home screen installation**: Add to your device like any other app
+- **Automatic updates**: Always get the latest features when connected
+
+<Info>
+  Once Iftarkar is loaded for the first time, all timings and features work offline - perfect for areas with limited connectivity.
+</Info>
+
+## App manifest configuration
+
+Iftarkar's PWA capabilities are defined in the manifest file:
+
+```typescript app/manifest.ts
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Iftarkar',
+    short_name: 'Iftarkar',
+    description: 'Iftarkar is your companion app for Ramzan. Daily Countdown Timer, Iftar and Sehri Timings for Jammu, Kashmir, Kargil and Ladakh.',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#f0ebe3',
+    theme_color: '#f0ebe3',
+    icons: [
+      {
+        src: '/icons/android-chrome-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/icons/android-chrome-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+      {
+        src: '/icons/maskable-icon.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/apple-touch-icon.png',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+    ],
+  }
+}
+```
+
+### Key manifest properties
+
+- **`display: 'standalone'`**: Opens the app without browser UI
+- **`start_url: '/'`**: Landing page when app launches
+- **`theme_color`**: Sets the app's theme color to match design
+- **`icons`**: Multiple icon sizes for different devices and contexts
+
+<Note>
+  The `maskable` icon ensures your app icon looks great on Android devices with adaptive icons.
+</Note>
+
+## Installing on Android
+
+<Steps>
+  <Step title="Open in Chrome or Edge">
+    Navigate to the Iftarkar website using Chrome, Edge, or another Chromium-based browser on your Android device.
+  </Step>
+
+  <Step title="Tap the install prompt">
+    Look for the "Add to Home Screen" or "Install" banner that appears at the bottom of the screen.
+
+    Alternatively, tap the three-dot menu in the top right and select "Install app" or "Add to Home Screen".
+  </Step>
+
+  <Step title="Confirm installation">
+    A dialog will appear asking you to confirm the installation. Tap "Install" or "Add".
+
+    The app icon will be added to your home screen.
+  </Step>
+
+  <Step title="Launch the app">
+    Tap the Iftarkar icon on your home screen to launch the app in standalone mode.
+
+    The app will open without the browser address bar, providing a native app experience.
+  </Step>
+</Steps>
+
+<Info>
+  The installed app will automatically update when you're connected to the internet and a new version is available.
+</Info>
+
+## Installing on iOS (iPhone/iPad)
+
+<Steps>
+  <Step title="Open in Safari">
+    Navigate to the Iftarkar website using Safari on your iOS device.
+
+    <Warning>
+      PWA installation on iOS requires Safari. Chrome and other browsers on iOS do not support PWA installation.
+    </Warning>
+  </Step>
+
+  <Step title="Tap the Share button">
+    Tap the Share button at the bottom of the screen (square with an arrow pointing up).
+  </Step>
+
+  <Step title="Select Add to Home Screen">
+    Scroll down in the share menu and tap "Add to Home Screen".
+
+    You may need to scroll to find this option among other sharing actions.
+  </Step>
+
+  <Step title="Customize and add">
+    You can customize the app name if desired, then tap "Add" in the top right corner.
+
+    The Iftarkar icon will appear on your home screen.
+  </Step>
+
+  <Step title="Launch the app">
+    Tap the Iftarkar icon to launch the app.
+
+    It will open in standalone mode with the iOS status bar matching the app's theme color.
+  </Step>
+</Steps>
+
+## Installing on desktop
+
+You can also install Iftarkar as a desktop app on Windows, macOS, and Linux:
+
+<Steps>
+  <Step title="Open in Chrome or Edge">
+    Visit the Iftarkar website in Chrome, Edge, or another Chromium-based browser.
+  </Step>
+
+  <Step title="Click the install button">
+    Look for the install icon in the address bar (usually a computer monitor with a down arrow).
+
+    Alternatively, click the three-dot menu and select "Install Iftarkar" or "Install app".
+  </Step>
+
+  <Step title="Confirm installation">
+    A dialog will appear. Click "Install" to add Iftarkar to your applications.
+
+    The app will open in its own window.
+  </Step>
+
+  <Step title="Access from applications">
+    The installed app will appear in your applications list and can be launched like any native desktop application.
+  </Step>
+</Steps>
+
+## PWA implementation details
+
+Iftarkar uses the `@ducanh2912/next-pwa` package to enable Progressive Web App features:
+
+```json package.json
+{
+  "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9"
+  }
+}
+```
+
+This package provides:
+- Service worker generation and registration
+- Automatic caching strategies
+- Offline support with runtime caching
+- Workbox integration for advanced caching
+
+### Offline support
+
+The service worker caches:
+- All static assets (JavaScript, CSS, fonts)
+- App icons and images
+- Data files including `timings.json`
+- Previously visited pages
+
+<Info>
+  The first time you visit Iftarkar, assets are cached. Subsequent visits load instantly, and the app works even without internet.
+</Info>
+
+## Benefits of PWA installation
+
+### For users
+
+- **Quick access**: Launch from home screen like any app
+- **Offline reliability**: Works without internet after first load
+- **No app store required**: Install directly from the website
+- **Automatic updates**: Always get the latest version
+- **Reduced data usage**: Cached content loads instantly
+
+### For performance
+
+- **Faster load times**: Assets served from cache
+- **Reduced server load**: Fewer requests after caching
+- **Better user experience**: App-like interactions and transitions
+
+## Verifying PWA installation
+
+To check if the PWA is properly installed:
+
+### On Android
+1. Open Settings > Apps
+2. Look for "Iftarkar" in your app list
+3. It should appear alongside other installed apps
+
+### On iOS
+1. Check your home screen for the Iftarkar icon
+2. Launch the app - it should open without Safari UI
+3. The status bar should match the app's theme color
+
+### On desktop
+1. Check your applications menu or Start menu
+2. Look for "Iftarkar" in the installed apps
+3. Launch it - it should open in a standalone window
+
+## Uninstalling the PWA
+
+### Android
+- Long-press the app icon and select "Uninstall" or "Remove"
+- Or go to Settings > Apps > Iftarkar > Uninstall
+
+### iOS
+- Long-press the app icon and select "Remove App" > "Delete App"
+- Or delete it like any other app icon
+
+### Desktop
+- Right-click the app window's title bar and select "Uninstall"
+- Or uninstall through your system's app management settings
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Install prompt doesn't appear">
+    - Ensure you're using a supported browser (Chrome, Edge, or Safari on iOS)
+    - The site must be served over HTTPS
+    - Try clearing your browser cache and revisiting the site
+    - On some browsers, the prompt only appears after multiple visits
+  </Accordion>
+
+  <Accordion title="App not working offline">
+    - Visit all pages you want available offline at least once while connected
+    - Check that service worker is registered in browser DevTools
+    - Clear cache and reload if you're experiencing stale content
+  </Accordion>
+
+  <Accordion title="Icons not displaying correctly">
+    - Ensure all icon files exist in `/public/icons/`
+    - Check that icon paths in `manifest.ts` are correct
+    - Uninstall and reinstall the app to refresh icons
+  </Accordion>
+
+  <Accordion title="Updates not applying">
+    - Close the app completely and reopen
+    - Clear browser cache if using the web version
+    - Uninstall and reinstall the PWA to get the latest version
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Features" icon="star" href="/features/prayer-times">
+    Explore all features including countdown timer and calendars
+  </Card>
+  <Card title="Export & Print" icon="download" href="/features/calendar-export">
+    Learn how to export timings to calendar apps and create printable schedules
+  </Card>
+</CardGroup>

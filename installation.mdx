@@ -1,0 +1,204 @@
+---
+title: Installation
+description: Clone the Iftarkar repository and set up your local development environment
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v18 or newer)
+- **npm** or **yarn** package manager
+
+<Note>
+  You can verify your Node.js version by running `node --version` in your terminal.
+</Note>
+
+## Installation steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Iftarkar repository from GitHub to your local machine:
+
+    ```bash
+    git clone https://github.com/SyedFahad-CS/iftarkar.git
+    cd iftarkar
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required npm packages using your preferred package manager:
+
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+    This will install all dependencies listed in `package.json`, including:
+    - Next.js framework
+    - TypeScript and type definitions
+    - Tailwind CSS for styling
+    - Luxon for date/time handling
+    - FontAwesome icons
+    - PWA plugin for offline support
+    - iCal generator for calendar exports
+  </Step>
+
+  <Step title="Run the development server">
+    Start the Next.js development server:
+
+    ```bash
+    npm run dev
+    ```
+
+    The application will start on port 3000 by default.
+  </Step>
+
+  <Step title="Open in browser">
+    Navigate to [http://localhost:3000](http://localhost:3000) in your web browser to see the application running.
+
+    You should see:
+    - The countdown timer component
+    - Current Sehri and Iftar times
+    - Progress bars showing time until next prayer
+    - Calendar access buttons
+  </Step>
+</Steps>
+
+<Info>
+  The development server supports hot reloading - any changes you make to the code will automatically refresh in your browser.
+</Info>
+
+## Available scripts
+
+Iftarkar includes several npm scripts for development and production:
+
+```json package.json
+{
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
+  }
+}
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+Starts the development server with hot reloading enabled.
+
+### Building for production
+
+```bash
+npm run build
+```
+
+Creates an optimized production build in the `.next` folder. This command:
+- Compiles TypeScript to JavaScript
+- Optimizes assets and images
+- Generates static pages where possible
+- Minifies code for better performance
+
+### Running production build
+
+```bash
+npm run start
+```
+
+Starts the production server after building. Use this to test your production build locally.
+
+### Code quality
+
+```bash
+# Check for linting errors
+npm run lint
+
+# Automatically fix linting issues
+npm run lint:fix
+
+# Check code formatting
+npm run format
+
+# Automatically format code
+npm run format:fix
+```
+
+## Data source
+
+The application uses hardcoded timings for maximum reliability:
+
+<Warning>
+  Timing data is stored in `data/timings.json` - this ensures users always have access to accurate schedules even if external APIs fail during the holy month.
+</Warning>
+
+The timings file includes:
+- Daily Fajr and Maghrib times for the entire month
+- Data for all supported Fiqh schools (Hanafi, Jaffaria, Ahle Hadees)
+- District-specific time offsets for Kashmir regions
+
+Example structure from the timer component:
+
+```tsx components/timer.tsx
+const times = getTimes();
+if (!times) return;
+setTimeEnd(times.next);
+setUpcomingLabel(times.label);
+setPhase(times.phase);
+```
+
+## Deployment
+
+Iftarkar is optimized for deployment on modern hosting platforms:
+
+### Recommended platforms
+
+- **Vercel** (recommended for Next.js apps)
+- **Netlify**
+- **Cloudflare Pages**
+- Any platform supporting Node.js applications
+
+### Build output
+
+After running `npm run build`, the application generates:
+- Static HTML pages for calendar routes
+- Optimized JavaScript bundles
+- Service worker for PWA functionality
+- Manifest file for app installation
+
+<Info>
+  The app uses static generation where possible for better performance and SEO.
+</Info>
+
+## Environment configuration
+
+The application uses environment variables for configuration:
+
+```typescript
+process.env.NEXT_PUBLIC_RAMADAN_START_DATE  // Start date for Ramadan
+```
+
+Create a `.env.local` file in your project root to set custom values:
+
+```bash .env.local
+NEXT_PUBLIC_RAMADAN_START_DATE=2026-02-28
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="PWA setup" icon="mobile" href="/pwa-setup">
+    Learn how to install Iftarkar as a Progressive Web App
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Contribute to the Iftarkar project
+  </Card>
+</CardGroup>

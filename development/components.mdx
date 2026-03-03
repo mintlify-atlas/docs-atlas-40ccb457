@@ -1,0 +1,623 @@
+---
+title: Component documentation
+description: React component APIs, props, and usage examples
+---
+
+## Component overview
+
+Iftarkar uses a modular component architecture with reusable UI elements:
+
+<CardGroup cols={2}>
+  <Card title="Timer" icon="clock">
+    Main countdown display with prayer time cards
+  </Card>
+  <Card title="Settings Modal" icon="gear">
+    Configure method and location preferences
+  </Card>
+  <Card title="Navbar" icon="bars">
+    Responsive navigation with mobile menu
+  </Card>
+  <Card title="Modal System" icon="window-restore">
+    Reusable modal components (overlay, card, header)
+  </Card>
+  <Card title="Duas Container" icon="book-quran">
+    Tabbed interface for Ramadan duas
+  </Card>
+  <Card title="Progress Bar" icon="chart-line">
+    Visual progress indicator
+  </Card>
+</CardGroup>
+
+## Timer component
+
+The heart of the application - displays countdown and upcoming prayer times.
+
+### Props
+
+```typescript
+// No props - uses global Settings
+export default function Timer(): JSX.Element
+```
+
+### Features
+
+<Tabs>
+  <Tab title="Real-time countdown">
+    ```tsx components/timer.tsx
+    const [timeLeft, setTimeLeft] = useState<Duration>();
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+      calculate();
+      const interval = setInterval(() => {
+        calculate();
+      }, 1000);  // Update every second
+      return () => clearInterval(interval);
+    }, []);
+    ```
+  </Tab>
+  <Tab title="Phase detection">
+    ```tsx
+    const getPhaseConfig = () => {
+      switch (phase) {
+        case "PRE_SEHRI":
+          return {
+            left: { label: "Suhoor Time", isNext: false },
+            right: { label: "⏳ Fast Begins In", isNext: true },
+            banner: "Fast Begins In",
+          };
+        case "FASTING":
+          return {
+            left: { label: "Fasting", isNext: false },
+            right: { label: "🌇 Iftar In", isNext: true },
+            banner: "Iftar In",
+          };
+        case "POST_IFTAR":
+          return {
+            left: { label: "🌄 Suhoor Ends At", isNext: true },
+            right: { label: "Iftar Time", isNext: false },
+            banner: "Suhoor Ends In",
+          };
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="Hydration safety">
+    ```tsx
+    const [mounted, setMounted] = useState(false);
+
+    if (!mounted) {
+      return (
+        <div className="w-full space-y-4 animate-pulse">
+          {/* Skeleton loader */}
+          <div className="h-9 bg-border/40 rounded"></div>
+          <div className="grid grid-cols-2 gap-3 h-[120px]">
+            <div className="card opacity-40"></div>
+            <div className="card opacity-40"></div>
+          </div>
+        </div>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Usage
+
+```tsx app/page.tsx
+import Timer from "@/components/timer";
+
+export default function Home() {
+  return (
+    <main>
+      <Timer />
+    </main>
+  );
+}
+```
+
+### UI structure
+
+<Steps>
+  <Step title="Header bar">
+    Displays current method and location with settings button
+  </Step>
+  <Step title="Prayer cards">
+    Two cards showing Sehri and Iftar times with "Next"/"Now" badges
+  </Step>
+  <Step title="Method notes">
+    Conditional message for ETK/AJKSA showing precaution time
+  </Step>
+  <Step title="Countdown display">
+    Large green gradient card with live timer and progress bar
+  </Step>
+</Steps>
+
+## Settings modal
+
+Allows users to configure prayer calculation method and location.
+
+### Props
+
+```typescript
+interface SettingsModalProps {
+  hidden: boolean;                    // Controls visibility
+  setHidden: React.Dispatch<boolean>; // Toggle function
+}
+```
+
+### Implementation
+
+<CodeGroup>
+```tsx components/settings.tsx
+import { Settings } from "@/lib/settings";
+import {
+  ModalOverlay,
+  ModalCard,
+  ModalHeader,
+  ModalBody,
+  ModalClose,
+} from "./modal";
+
+export default function SettingsModal({
+  hidden,
+  setHidden,
+}: {
+  hidden: boolean;
+  setHidden: React.Dispatch<boolean>;
+}) {
+  if (hidden) return <></>;
+
+  return (
+    <>
+      <ModalOverlay />
+      <ModalCard>
+        <ModalHeader>
+          <h2>Settings</h2>
+          <ModalClose onClick={() => setHidden(true)} />
+        </ModalHeader>
+        <ModalBody>
+          {/* Method selector */}
+          <select
+            onChange={(e) => {
+              Settings.method = e.target.value;
+              window.location.reload();
+            }}
+            defaultValue={Settings.method}
+          >
+            {Object.entries(Settings.methods).map(([key, name]) => (
+              <option key={key} value={key}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          {/* Offset selector */}
+          <select
+            onChange={(e) => {
+              Settings.offset = parseInt(e.target.value);
+              window.location.reload();
+            }}
+            defaultValue={Settings.offset}
+          >
+            {Object.entries(Settings.offsets).map(([key, name]) => (
+              <option key={key} value={key}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </ModalBody>
+      </ModalCard>
+    </>
+  );
+}
+```
+</CodeGroup>
+
+### Usage
+
+```tsx
+const [settingsHidden, setSettingsHidden] = useState(true);
+
+<SettingsModal
+  hidden={settingsHidden}
+  setHidden={setSettingsHidden}
+/>
+```
+
+<Note>
+Changing settings triggers a full page reload to ensure all time calculations are updated with the new method/location.
+</Note>
+
+## Modal system
+
+Reusable modal components for consistent UI:
+
+### Components
+
+<Tabs>
+  <Tab title="ModalOverlay">
+    ```tsx components/modal.tsx
+    export function ModalOverlay() {
+      return <div className="fixed inset-0 z-40 bg-black/30" />;
+    }
+    ```
+    Creates a semi-transparent backdrop.
+  </Tab>
+  <Tab title="ModalCard">
+    ```tsx
+    export function ModalCard({ children }: { children: React.ReactNode }) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="card w-full max-w-md animate-fade-up overflow-hidden shadow-card-hover">
+            {children}
+          </div>
+        </div>
+      );
+    }
+    ```
+    Centered card container with animation.
+  </Tab>
+  <Tab title="ModalHeader">
+    ```tsx
+    export function ModalHeader({ children }: { children: React.ReactNode }) {
+      return (
+        <div className="relative border-b border-border bg-accent px-6 py-4">
+          {children}
+        </div>
+      );
+    }
+    ```
+    Green header bar for title and close button.
+  </Tab>
+  <Tab title="ModalClose">
+    ```tsx
+    export function ModalClose({ onClick }: { onClick: () => void }) {
+      return (
+        <button
+          className="absolute right-4 top-1/2 -translate-y-1/2"
+          onClick={onClick}
+        >
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+      );
+    }
+    ```
+    X button positioned in top-right.
+  </Tab>
+  <Tab title="ModalBody">
+    ```tsx
+    export function ModalBody({ children }: { children: React.ReactNode }) {
+      return (
+        <div className="flex flex-col gap-y-3 p-5">{children}</div>
+      );
+    }
+    ```
+    Content area with vertical spacing.
+  </Tab>
+</Tabs>
+
+### Example: Building a custom modal
+
+```tsx
+import {
+  ModalOverlay,
+  ModalCard,
+  ModalHeader,
+  ModalBody,
+  ModalClose,
+} from "@/components/modal";
+
+export default function CustomModal({ hidden, setHidden }) {
+  if (hidden) return null;
+
+  return (
+    <>
+      <ModalOverlay />
+      <ModalCard>
+        <ModalHeader>
+          <h2>My Custom Modal</h2>
+          <ModalClose onClick={() => setHidden(true)} />
+        </ModalHeader>
+        <ModalBody>
+          <p>Your content here</p>
+        </ModalBody>
+      </ModalCard>
+    </>
+  );
+}
+```
+
+## Navbar component
+
+Responsive navigation bar with scroll-based animations.
+
+### Props
+
+```typescript
+// No props - self-contained
+export default function Navbar(): JSX.Element
+```
+
+### Features
+
+<Accordion title="Scroll-based resizing">
+```tsx components/navbar.tsx
+const [scrolled, setScrolled] = useState(false);
+
+useEffect(() => {
+  const onScroll = () => setScrolled(window.scrollY > 40);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  return () => window.removeEventListener("scroll", onScroll);
+}, []);
+
+return (
+  <div className={scrolled ? "pt-3" : "pt-6"}>
+    <nav>
+      <Image
+        className={scrolled ? "h-6 md:h-7" : "h-8 md:h-10"}
+        src={logo}
+      />
+    </nav>
+  </div>
+);
+```
+Logo and padding shrink when user scrolls down.
+</Accordion>
+
+<Accordion title="Mobile menu">
+```tsx
+const [menuOpen, setMenuOpen] = useState(false);
+
+{/* Mobile hamburger */}
+<button
+  className="sm:hidden"
+  onClick={() => setMenuOpen(!menuOpen)}
+>
+  <FontAwesomeIcon
+    icon={menuOpen ? faTimes : faBars}
+  />
+</button>
+
+{/* Mobile menu */}
+{menuOpen && (
+  <div className="sm:hidden">
+    <Link href="/" onClick={() => setMenuOpen(false)}>
+      Home
+    </Link>
+    <Link href="https://haider.id/namazpar">
+      NamazPar App
+    </Link>
+  </div>
+)}
+```
+</Accordion>
+
+## Duas container
+
+Tabbed interface for displaying Ramadan duas.
+
+### Props
+
+```typescript
+// No props - uses hardcoded duas array
+export function DuasContainer(): JSX.Element
+```
+
+### Data structure
+
+```tsx components/duas.tsx
+const Duas = [
+  {
+    title: "Dua Sahar",
+    arabic: "وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ",
+    english: "I intend to keep the fast for tomorrow in the month of Ramadan",
+    roman: "Wa bisawmi ghadinn nawaiytu min shahri ramadan",
+  },
+  // ... more duas
+];
+```
+
+### Implementation
+
+<CodeGroup>
+```tsx components/duas.tsx
+import classNames from "classnames";
+
+export function DuasContainer() {
+  const [activeTab, setActiveTab] = useState(-1);
+
+  return (
+    <div className="w-full">
+      {/* Tab buttons */}
+      <div className="flex gap-2">
+        {Duas.map((dua, idx) => (
+          <button
+            onClick={() => setActiveTab(idx !== activeTab ? idx : -1)}
+            className={classNames(
+              "flex-1 rounded-xl py-2.5 text-center",
+              {
+                "bg-[#e8e2d8] text-ink-secondary": activeTab !== idx,
+                "bg-gradient-to-r from-[#0f4a2c] to-[#1a7a4e] text-white":
+                  activeTab === idx,
+              }
+            )}
+          >
+            {dua.title}
+          </button>
+        ))}
+      </div>
+
+      {/* Dua content */}
+      {activeTab >= 0 && (
+        <div className="card mt-3 p-5">
+          <p dir="rtl" className="font-arabic text-ink">
+            {Duas[activeTab].arabic}
+          </p>
+          <div className="divider" />
+          <p className="italic text-ink-secondary">
+            {Duas[activeTab].roman}
+          </p>
+          <div className="divider" />
+          <p className="text-ink">
+            {Duas[activeTab].english}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+<Note>
+Clicking an active tab again collapses it (`idx !== activeTab ? idx : -1`).
+</Note>
+
+## Progress bar
+
+Simple progress indicator for fasting progress.
+
+### Props
+
+```typescript
+interface ProgressBarProps {
+  value: number;  // Progress percentage (0-100)
+}
+```
+
+### Implementation
+
+```tsx components/progress_bar.tsx
+export default function ProgressBar({ value }: { value: number }) {
+  return (
+    <div className="w-full">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+        <div
+          className="h-full rounded-full bg-accent transition-all duration-700 ease-out"
+          style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
+        />
+      </div>
+      <p className="mt-2 text-center text-xs tabular-nums text-ink-muted">
+        {value.toFixed(1)}%
+      </p>
+    </div>
+  );
+}
+```
+
+### Usage
+
+```tsx
+<ProgressBar value={45.7} />
+// Displays 45.7% filled bar
+```
+
+<Accordion title="Why Math.min and Math.max?">
+Ensures value is clamped between 0-100 to prevent visual bugs:
+```tsx
+Math.min(Math.max(value, 0), 100)
+// value = -5  → 0
+// value = 50  → 50
+// value = 150 → 100
+```
+</Accordion>
+
+## Print button
+
+Toggles between color and black & white print modes.
+
+### Props
+
+```typescript
+// No props - controls print directly
+export default function PrintButton(): JSX.Element
+```
+
+### Implementation
+
+```tsx components/printButtons.tsx
+"use client";
+
+export default function PrintButton() {
+  return (
+    <div className="hide-print flex gap-x-2">
+      <button
+        onClick={() => {
+          document.body.classList.remove("print-bw");
+          window.print();
+        }}
+      >
+        Print Color
+      </button>
+      <button
+        onClick={() => {
+          document.body.classList.add("print-bw");
+          window.print();
+        }}
+      >
+        Print B&W
+      </button>
+    </div>
+  );
+}
+```
+
+<Note>
+The `hide-print` class hides these buttons in print view using CSS `@media print`.
+</Note>
+
+## Best practices
+
+### Client vs. Server components
+
+```tsx
+// ✅ Use "use client" for interactive components
+"use client";
+import { useState } from "react";
+
+export default function InteractiveComponent() {
+  const [state, setState] = useState(0);
+  // ...
+}
+```
+
+```tsx
+// ✅ Server components for static content
+export default function StaticComponent() {
+  return <div>No interactivity needed</div>;
+}
+```
+
+### TypeScript typing
+
+```tsx
+// ✅ Type your props
+interface ComponentProps {
+  value: number;
+  onChange: (newValue: number) => void;
+}
+
+export default function Component({ value, onChange }: ComponentProps) {
+  // ...
+}
+```
+
+### Conditional rendering
+
+```tsx
+// ✅ Early return for hidden modals
+if (hidden) return <></>;
+
+// ✅ Use classNames for conditional classes
+import classNames from "classnames";
+
+className={classNames(
+  "base-class",
+  {
+    "active-class": isActive,
+    "disabled-class": isDisabled,
+  }
+)}
+```

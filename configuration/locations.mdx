@@ -1,0 +1,215 @@
+---
+title: Location offsets
+description: Time adjustments for different districts and cities across Kashmir
+---
+
+Iftarkar provides location-based time offsets to ensure accurate prayer times across Kashmir's diverse geography. All timings are calculated relative to Srinagar (offset: 0), with adjustments in minutes for other locations.
+
+## How location offsets work
+
+Prayer times are calculated for Srinagar by default. Each district or city has an offset value (in minutes) that is added to or subtracted from Srinagar's timings:
+
+- **Positive offset:** Prayer times are later than Srinagar
+- **Negative offset:** Prayer times are earlier than Srinagar
+- **Zero offset:** Same as Srinagar
+
+```typescript
+// Example: Calculating time for Baramulla (offset: +1)
+const offset = Duration.fromObject({ minute: Settings.offset });
+const iftarTime = DateTime.fromFormat("18:21", "H:mm").plus(offset);
+// Srinagar Iftar: 18:21
+// Baramulla Iftar: 18:22
+```
+
+## Available locations
+
+All three calculation methods (Raheemiya, ETK, AJKSA) use the same location offsets defined in `data/timings.json:4`.
+
+### Srinagar (default)
+
+<ParamField path="Srinagar" type="number">
+  **Offset:** 0 minutes
+  
+  The base location for all prayer time calculations. All other locations are relative to Srinagar.
+</ParamField>
+
+### Locations with earlier times
+
+These locations have negative offsets, meaning prayer times occur before Srinagar:
+
+<ParamField path="Pulwama, Kulgam, Harmukh" type="number">
+  **Offset:** -1 minute
+  
+  ```typescript
+  Settings.offset = -1;
+  Settings.offsetLabel; // "Pulwama, Kulgam, Harmukh"
+  ```
+</ParamField>
+
+<ParamField path="Islamabad, Tral, Kud" type="number">
+  **Offset:** -2 minutes
+  
+  ```typescript
+  Settings.offset = -2;
+  ```
+</ParamField>
+
+<ParamField path="Pahalgam" type="number">
+  **Offset:** -3 minutes
+  
+  ```typescript
+  Settings.offset = -3;
+  ```
+</ParamField>
+
+<ParamField path="Leh" type="number">
+  **Offset:** -11 minutes
+  
+  The largest negative offset due to Leh's eastern location and high altitude.
+  
+  ```typescript
+  Settings.offset = -11;
+  ```
+</ParamField>
+
+### Locations with later times
+
+These locations have positive offsets, meaning prayer times occur after Srinagar:
+
+<ParamField path="Baramulla, Tangmarg, Sopore" type="number">
+  **Offset:** +1 minute
+  
+  ```typescript
+  Settings.offset = 1;
+  Settings.offsetLabel; // "Baramulla, Tangmarg, Sopore"
+  ```
+</ParamField>
+
+<ParamField path="Bandipora, Poonch" type="number">
+  **Offset:** +2 minutes
+  
+  ```typescript
+  Settings.offset = 2;
+  ```
+</ParamField>
+
+<ParamField path="Uri" type="number">
+  **Offset:** +3 minutes
+  
+  ```typescript
+  Settings.offset = 3;
+  ```
+</ParamField>
+
+<ParamField path="Teetwal, Karnah" type="number">
+  **Offset:** +4 minutes
+  
+  The largest positive offset, reflecting these locations' northwestern position.
+  
+  ```typescript
+  Settings.offset = 4;
+  ```
+</ParamField>
+
+## Accessing location data
+
+<Steps>
+  <Step title="Get all available offsets">
+    Use the `Settings.offsets` property to retrieve all location options for the current method.
+    
+    ```typescript
+    const locations = Settings.offsets;
+    // Returns:
+    // {
+    //   0: "Srinagar",
+    //   -1: "Pulwama, Kulgam, Harmukh",
+    //   -2: "Islamabad, Tral, Kud",
+    //   -3: "Pahalgam",
+    //   -11: "Leh",
+    //   1: "Baramulla, Tangmarg, Sopore",
+    //   2: "Bandipora, Poonch",
+    //   3: "Uri",
+    //   4: "Teetwal, Karnah"
+    // }
+    ```
+  </Step>
+  
+  <Step title="Get current location name">
+    Use `Settings.offsetLabel` to get the human-readable name for the selected offset.
+    
+    ```typescript
+    Settings.offset = 2;
+    Settings.offsetLabel; // "Bandipora, Poonch"
+    ```
+  </Step>
+  
+  <Step title="Find offset by location name">
+    Search through the offsets object to find a specific location's offset value.
+    
+    ```typescript
+    const offsets = timings[Settings.method].offsets;
+    const pahalgam = offsets.find(o => o.name === "Pahalgam");
+    console.log(pahalgam.offset); // -3
+    ```
+  </Step>
+</Steps>
+
+## Data structure
+
+Location offsets are stored in `data/timings.json` under each method's `offsets` array:
+
+```json
+{
+  "raheemiya": {
+    "name": "Raheemiya Calendar",
+    "offsets": [
+      { "name": "Pulwama, Kulgam, Harmukh", "offset": -1 },
+      { "name": "Islamabad, Tral, Kud", "offset": -2 },
+      { "name": "Pahalgam", "offset": -3 },
+      { "name": "Leh", "offset": -11 },
+      { "name": "Baramulla, Tangmarg, Sopore", "offset": 1 },
+      { "name": "Bandipora, Poonch", "offset": 2 },
+      { "name": "Uri", "offset": 3 },
+      { "name": "Teetwal, Karnah", "offset": 4 }
+    ],
+    "timings": { ... }
+  }
+}
+```
+
+<Note>
+  All three calculation methods (Raheemiya, ETK, AJKSA) share identical offset values. Only the base prayer times differ between methods.
+</Note>
+
+## Usage in time calculations
+
+The offset is applied when calculating prayer times in `lib/utils.ts:30`:
+
+```typescript
+const offset = Duration.fromObject({ minute: Settings.offset });
+
+// Calculate Sehri time
+const sehriToday = DateTime.fromFormat(timingsToday.fajr, "H:mm")
+  .plus(offset)
+  .plus(sehriOffset);
+
+// Calculate Iftar time
+const iftarToday = DateTime.fromFormat(timingsToday.maghrib, "H:mm")
+  .plus(offset);
+```
+
+<Info>
+  Offsets are applied using Luxon's `Duration` and `DateTime` classes for accurate time arithmetic.
+</Info>
+
+## Geographic rationale
+
+The offset values reflect astronomical differences due to:
+
+- **Longitude:** Locations east of Srinagar see sunrise/sunset earlier (negative offset)
+- **Longitude:** Locations west of Srinagar see sunrise/sunset later (positive offset)
+- **Altitude:** High-altitude locations like Leh have different horizon angles
+
+<Note>
+  These offsets are calculated by Islamic scholars and verified against astronomical data for Kashmir's specific geography.
+</Note>

@@ -1,0 +1,237 @@
+---
+title: Fiqh school selection
+description: Choosing between Raheemiya (Hanafi), ETK (Jaffaria), and AJKSA (Ahle Hadees) calculation methods
+---
+
+Iftarkar supports three Islamic jurisprudence (Fiqh) schools for prayer time calculations, each following different methodologies for determining Fajr and Maghrib times. Users can select their preferred school based on their religious tradition.
+
+## Available schools
+
+The three calculation methods are defined in `data/timings.json:1` and accessed through the Settings class.
+
+### Raheemiya (Hanafi)
+
+<ParamField path="raheemiya" type="string">
+  **Full name:** Fiqah Hanafiya (Raheemiya Calendar)
+  
+  **Key:** `raheemiya`
+  
+  **Sehri offset:** 0 minutes (Fajr time is used directly)
+  
+  The Hanafi school method published by Raheemiya Calendar. This is the default method used by most Sunni Muslims in Kashmir.
+  
+  ```typescript
+  Settings.method = "raheemiya";
+  Settings.methodLabel; // "Fiqah Hanafiya (Raheemiya Calendar)"
+  Settings.sehriOffet; // 0
+  ```
+</ParamField>
+
+### ETK (Jaffaria)
+
+<ParamField path="etk" type="string">
+  **Full name:** Fiqah Jaffaria (ETK Calendar)
+  
+  **Key:** `etk`
+  
+  **Sehri offset:** -10 minutes before Fajr
+  
+  The Jaffaria (Shia) school method published by ETK Calendar. Sehri time is calculated 10 minutes before Fajr time.
+  
+  ```typescript
+  Settings.method = "etk";
+  Settings.methodLabel; // "Fiqah Jaffaria (ETK Calendar)"
+  Settings.sehriOffet; // -10
+  ```
+</ParamField>
+
+### AJKSA (Ahle Hadees)
+
+<ParamField path="ahle_hadees" type="string">
+  **Full name:** Jamiat Ahle Hadees J&K
+  
+  **Key:** `ahle_hadees`
+  
+  **Sehri offset:** -5 minutes before Fajr
+  
+  The Ahle Hadees (Salafi) school method published by Jamiat Ahle Hadees J&K. Sehri time is calculated 5 minutes before Fajr time.
+  
+  ```typescript
+  Settings.method = "ahle_hadees";
+  Settings.methodLabel; // "Jamiat Ahle Hadees J&K"
+  Settings.sehriOffet; // -5
+  ```
+</ParamField>
+
+## Timing differences
+
+Each school calculates Fajr and Maghrib times differently based on sun angle methodology. Here's an example for February 19, 2026:
+
+| Time | Raheemiya | ETK | AJKSA |
+|------|-----------|-----|-------|
+| **Fajr** | 05:49 | 05:48 | 05:50 |
+| **Sehri** | 05:49 | 05:38 | 05:45 |
+| **Maghrib** | 18:21 | 18:34 | 18:19 |
+
+<Note>
+  Sehri times differ more significantly than Fajr times due to the automatic offsets applied by each school.
+</Note>
+
+## Sehri offset calculation
+
+The `sehriOffet` property in `lib/settings.ts:31` automatically adjusts Sehri time based on the selected method:
+
+```typescript
+static get sehriOffet() {
+  if (Settings.method == "etk") {
+    return -10; // ETK: 10 minutes before Fajr
+  }
+  if (Settings.method == "ajksa") {
+    return -5; // AJKSA: 5 minutes before Fajr
+  }
+  return 0; // Raheemiya: Same as Fajr
+}
+```
+
+This offset is then applied when calculating the actual Sehri time in `lib/utils.ts:31`:
+
+```typescript
+const sehriOffset = Duration.fromObject({ minute: Settings.sehriOffet });
+
+const sehriToday = DateTime.fromFormat(timingsToday.fajr, "H:mm")
+  .plus(offset) // Location offset
+  .plus(sehriOffset); // School-specific Sehri offset
+```
+
+## Getting method information
+
+<Steps>
+  <Step title="List all available methods">
+    Use `Settings.methods` to get all calculation methods with display names.
+    
+    ```typescript
+    const methods = Settings.methods;
+    // Returns:
+    // {
+    //   "raheemiya": "Fiqah Hanafiya (Raheemiya Calendar)",
+    //   "etk": "Fiqah Jaffaria (ETK Calendar)",
+    //   "ahle_hadees": "Jamiat Ahle Hadees J&K"
+    // }
+    ```
+  </Step>
+  
+  <Step title="Get current method">
+    Access the currently selected method using `Settings.method`.
+    
+    ```typescript
+    const current = Settings.method; // "raheemiya"
+    const label = Settings.methodLabel; // "Fiqah Hanafiya (Raheemiya Calendar)"
+    ```
+  </Step>
+  
+  <Step title="Change method">
+    Set a new method and reload to apply changes.
+    
+    ```typescript
+    Settings.method = "etk";
+    window.location.reload(); // Required to recalculate times
+    ```
+  </Step>
+</Steps>
+
+## Label formatting
+
+The `getLabel` function in `lib/utils.ts:122` formats method names with Fiqh school information:
+
+```typescript
+export const getLabel = (method: string) => {
+  if (method === "raheemiya")
+    return `Fiqah Hanafiya (${timings[method].name})`;
+  if (method === "etk")
+    return `Fiqah Jaffaria (${timings[method].name})`;
+  return timings[method].name;
+};
+```
+
+This produces labels like:
+- **Raheemiya:** "Fiqah Hanafiya (Raheemiya Calendar)"
+- **ETK:** "Fiqah Jaffaria (ETK Calendar)"
+- **AJKSA:** "Jamiat Ahle Hadees J&K" (name only)
+
+## Method-specific timing data
+
+Each method stores its own timing data in `data/timings.json`:
+
+```json
+{
+  "raheemiya": {
+    "name": "Raheemiya Calendar",
+    "offsets": [...],
+    "timings": {
+      "1902": { "fajr": "05:49", "maghrib": "18:21" },
+      "2002": { "fajr": "05:48", "maghrib": "18:22" },
+      ...
+    }
+  },
+  "etk": {
+    "name": "Fiqah Jaffaria (ETK Calendar)",
+    "offsets": [...],
+    "timings": {
+      "1902": { "fajr": "05:48", "maghrib": "18:34" },
+      "2002": { "fajr": "05:47", "maghrib": "18:35" },
+      ...
+    }
+  },
+  "ahle_hadees": {
+    "name": "Jamiat Ahle Hadees J&K",
+    "offsets": [...],
+    "timings": {
+      "1902": { "fajr": "05:50", "maghrib": "18:19" },
+      "2002": { "fajr": "05:49", "maghrib": "18:20" },
+      ...
+    }
+  }
+}
+```
+
+<Info>
+  The date keys use `ddLL` format (day-month), such as "1902" for February 19th.
+</Info>
+
+## Accessing timings
+
+Retrieve timings for the current method using `Settings.timings`:
+
+```typescript
+const timings = Settings.timings;
+// Returns timing data for Settings.method
+
+// Get specific date
+const today = DateTime.now().toFormat("ddLL"); // "1902"
+const todayTimings = timings[today];
+console.log(todayTimings); // { fajr: "05:49", maghrib: "18:21" }
+```
+
+## Choosing the right school
+
+<Steps>
+  <Step title="Identify your tradition">
+    - **Hanafi (Sunni):** Use Raheemiya
+    - **Jaffaria (Shia):** Use ETK
+    - **Ahle Hadees (Salafi):** Use AJKSA
+  </Step>
+  
+  <Step title="Consider Sehri preferences">
+    - **Stop eating at Fajr:** Use Raheemiya (0 minute offset)
+    - **Stop 5 minutes before:** Use AJKSA (-5 minute offset)
+    - **Stop 10 minutes before:** Use ETK (-10 minute offset)
+  </Step>
+  
+  <Step title="Consult local scholars">
+    If uncertain, consult with your local mosque or Islamic scholar to determine which method aligns with your community's practice.
+  </Step>
+</Steps>
+
+<Note>
+  All methods use the same location offsets. The differences are only in base Fajr/Maghrib calculations and Sehri timing methodology.
+</Note>
