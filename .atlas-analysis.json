@@ -1,0 +1,76 @@
+{
+  "projectType": "saas",
+  "projectName": "Iftarkar",
+  "projectDescription": "A modern, beautiful Ramadan timings application for Kashmir with accurate Sehri and Iftar schedules across multiple schools of thought.",
+  "theme": "almond",
+  "primaryColor": "#1a7a4e",
+  "lightColor": "#2d9d67",
+  "darkColor": "#0f4a2c",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "pwa-setup"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/prayer-times",
+              "features/calendar-export",
+              "features/print-calendars",
+              "features/fiqh-schools",
+              "features/offline-support"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/settings",
+              "configuration/locations",
+              "configuration/school-selection"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Developer Guide",
+            "pages": [
+              "development/architecture",
+              "development/data-structure",
+              "development/components",
+              "development/contributing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time Sehri and Iftar countdown timer",
+    "Location-based timings for Kashmir districts",
+    "Multiple Fiqh school calendars (Hanafi, Jaffaria, Ahle Hadees)",
+    "iCal export for Google/Apple Calendar integration",
+    "Print-friendly calendar generation",
+    "Progressive Web App with offline support"
+  ],
+  "publicApiSurface": [
+    "Settings.method - Get/set the selected Fiqh school",
+    "Settings.offset - Get/set location-based time offset",
+    "Settings.timings - Access prayer timings data",
+    "getTimes() - Calculate current prayer time phase and countdown",
+    "getIftarSehriForDate(date, method) - Get prayer times for specific date",
+    "getIslamicDate() - Get current Hijri date in Ramadan",
+    "/ical/[filename] - Download iCal calendar files",
+    "/calendars/[slug] - View printable calendar pages"
+  ]
+}
