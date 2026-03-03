@@ -71,7 +71,11 @@ Three authentic calculation methods are available:
     }
     ```
     
-    **Sehri timing**: Standard Fajr time
+    **Sehri timing**: Ends 5 minutes before Fajr (ahtiyat/precaution)
+    
+    <Note>
+      The Ahle Hadees method displays a notice: "Sehri ends 5 minutes before Fajr for ahtiyat."
+    </Note>
   </Tab>
 </Tabs>
 
@@ -133,12 +137,16 @@ static get sehriOffet() {
   if (Settings.method == "etk") {
     return -10; // 10 minutes before Fajr
   }
-  if (Settings.method == "ajksa") {
+  if (Settings.method == "ajksa") { // Note: Bug in source - should be "ahle_hadees"
     return -5; // 5 minutes before Fajr
   }
-  return 0; // Standard Fajr time
+  return 0; // Standard Fajr time (Raheemiya)
 }
 ```
+
+<Warning>
+  There is a bug in the source code where it checks for `"ajksa"` but the actual data key is `"ahle_hadees"`. This means the -5 minute offset for Ahle Hadees is currently not applied. The data structure uses `"ahle_hadees"` as shown above.
+</Warning>
 
 This offset is automatically applied in the timer calculations:
 
@@ -224,10 +232,14 @@ Each method follows this structure in `timings.json`:
 ```
 
 Where:
-- `method_key`: Internal identifier (raheemiya, etk, ahle_hadees)
+- `method_key`: Internal identifier in timings.json (raheemiya, etk, ahle_hadees)
 - `name`: Human-readable display name
 - `offsets`: Location-specific time adjustments
 - `timings`: Day-by-day Fajr and Maghrib times
+
+<Info>
+  The data file uses `"ahle_hadees"` (with underscore) as the key, but some parts of the code incorrectly reference `"ajksa"`, which prevents the -5 minute Sehri offset from being applied for this school.
+</Info>
 
 ## Settings persistence
 

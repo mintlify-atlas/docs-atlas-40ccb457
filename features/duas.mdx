@@ -1,0 +1,200 @@
+---
+title: Ramadan duas
+description: Access essential Sehri and Iftar supplications with Arabic text, transliteration, and English translation
+---
+
+Iftarkar includes a built-in duas (supplications) feature that provides the essential prayers recited during Sehri and Iftar times throughout Ramadan.
+
+## Available duas
+
+The application includes three key supplications:
+
+<Tabs>
+  <Tab title="Dua Sahar">
+    **Purpose**: Intention for fasting (recited at Sehri)
+    
+    **Arabic**:
+    ```text
+    وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ
+    ```
+    
+    **Transliteration**:
+    ```text
+    Wa bisawmi ghadinn nawaiytu min shahri ramadan
+    ```
+    
+    **English Translation**:
+    ```text
+    I intend to keep the fast for tomorrow in the month of Ramadan
+    ```
+  </Tab>
+  
+  <Tab title="Dua Iftar - 1">
+    **Purpose**: Prayer when breaking the fast
+    
+    **Arabic**:
+    ```text
+    اللَّهُمَّ اِنِّى لَكَ صُمْتُ وَبِكَ امنْتُ وَعَليْكَ تَوَكّلتُ وَعَلى رِزْقِكَ اَفْطَرْتُ
+    ```
+    
+    **Transliteration**:
+    ```text
+    Allahumma inni laka sumtu wa bika aamantu wa alayka tawakkaltu wa ala rizq-ika-aftartu
+    ```
+    
+    **English Translation**:
+    ```text
+    O Allah! I fasted for You and I believe in You and I put my trust in You and I break my fast with Your sustenance
+    ```
+  </Tab>
+  
+  <Tab title="Dua Iftar - 2">
+    **Purpose**: Alternative prayer for breaking the fast
+    
+    **Arabic**:
+    ```text
+    ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الأَجْرُ إِنْ شَاءَ اللَّهُ
+    ```
+    
+    **Transliteration**:
+    ```text
+    dhahabadh dhama-u wabtallatil 'urooqu, wa tha-batal ajru insha Allah
+    ```
+    
+    **English Translation**:
+    ```text
+    Thirst has gone, the arteries are moist, and the reward is sure, if Allah wills.
+    ```
+  </Tab>
+</Tabs>
+
+## How it works
+
+The duas feature is located on the home page, directly below the countdown timer.
+
+<Steps>
+  <Step title="Select a dua">
+    Three buttons are displayed horizontally, each labeled with the dua name:
+    - **Dua Sahar** (Sehri intention)
+    - **Dua Iftar - 1** (Breaking fast)
+    - **Dua Iftar - 2** (Alternative)
+  </Step>
+  
+  <Step title="View the content">
+    When you click a button, a card expands below showing:
+    - Arabic text in authentic Arabic font (Amiri)
+    - Romanized transliteration for pronunciation
+    - English translation
+  </Step>
+  
+  <Step title="Toggle visibility">
+    Clicking the same button again collapses the dua card. Click a different button to switch to another dua.
+  </Step>
+</Steps>
+
+## User interface
+
+The duas container uses a tabbed interface with visual feedback:
+
+```tsx
+{Duas.map((dua, idx) => (
+  <button
+    onClick={() => setActiveTab(idx !== activeTab ? idx : -1)}
+    className={classNames(
+      "flex-1 rounded-xl py-2.5 text-center text-[13px] font-semibold",
+      {
+        "bg-[#e8e2d8] text-ink-secondary": activeTab !== idx,
+        "bg-gradient-to-r from-[#0f4a2c] to-[#1a7a4e] text-white": activeTab === idx,
+      }
+    )}
+  >
+    {dua.title}
+  </button>
+))}
+```
+
+<Info>
+  Active buttons are highlighted with the signature green gradient, while inactive buttons have a neutral beige background.
+</Info>
+
+## Arabic typography
+
+The application uses the **Amiri** font specifically for displaying Arabic text:
+
+```typescript
+const amiri = Amiri({
+  weight: ["400", "700"],
+  subsets: ["arabic"],
+  display: "swap",
+  variable: "--font-amiri",
+});
+```
+
+This ensures authentic, readable Arabic script with proper diacritical marks.
+
+## Data structure
+
+The duas are hardcoded in the component for reliability:
+
+```typescript
+const Duas = [
+  {
+    title: "Dua Sahar",
+    arabic: "وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ",
+    english: "I intend to keep the fast for tomorrow in the month of Ramadan",
+    roman: "Wa bisawmi ghadinn nawaiytu min shahri ramadan",
+  },
+  {
+    title: "Dua Iftar - 1",
+    arabic: "اللَّهُمَّ اِنِّى لَكَ صُمْتُ...",
+    english: "O Allah! I fasted for You...",
+    roman: "Allahumma inni laka sumtu...",
+  },
+  {
+    title: "Dua Iftar - 2",
+    arabic: "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ...",
+    english: "Thirst has gone, the arteries are moist...",
+    roman: "dhahabadh dhama-u wabtallatil 'urooqu...",
+  },
+];
+```
+
+## Styling details
+
+The expanded dua card uses a clean, readable layout:
+
+```tsx
+<div className="card mt-3 flex flex-col gap-y-4 p-5 sm:p-6">
+  <p dir="rtl" className="text-3 font-arabic leading-[2] text-ink">
+    {Duas[activeTab].arabic}
+  </p>
+  <div className="divider" />
+  <p className="text-sm italic text-ink-secondary sm:text-base">
+    {Duas[activeTab].roman}
+  </p>
+  <div className="divider" />
+  <p className="text-sm text-ink sm:text-base">
+    {Duas[activeTab].english}
+  </p>
+</div>
+```
+
+Key features:
+- Right-to-left direction for Arabic text
+- Dividers between sections for clarity
+- Italic formatting for transliteration
+- Responsive text sizing (sm:text-base)
+- Proper line height for Arabic (leading-[2])
+
+## Accessibility
+
+The component includes proper ARIA attributes and semantic HTML:
+
+- **Buttons**: Each dua button is keyboard accessible
+- **State management**: Active tab state is clearly indicated visually
+- **Toggle behavior**: Click same button to close, different button to switch
+- **No external dependencies**: Works entirely offline
+
+<Tip>
+  The duas feature is always available on the home page, making it easy to access these essential prayers throughout the day during Ramadan.
+</Tip>
